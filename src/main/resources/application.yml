@@ -1,3 +1,6 @@
 spring:
   application:
     name: gimme-comments-server
+  data:
+    mongodb:
+      auto-index-creation: true
