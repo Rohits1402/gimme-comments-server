@@ -21,6 +21,7 @@ public class Website {
 
     @Id
     private String id;
+    @Indexed
     private String userId;
     private String websiteName;
     private String websiteDescription = "";
