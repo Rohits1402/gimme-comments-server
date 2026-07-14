@@ -13,10 +13,10 @@ public interface CommentRepository extends MongoRepository<Comment, String> {
 
     List<Comment> findByUserId(String userId);
 
-    // derived, one new word: IsNull — the root comments of a website (no parent)
+    void deleteByWebsiteId(String websiteId);
+
     List<Comment> findByWebsiteIdAndParentCommentIdIsNull(String websiteId);
 
-    // explicit query: raw Mongo JSON, ?0 and ?1 are the method arguments in order
     @Query("{ 'websiteId': ?0, 'commentDescription': { $regex: ?1, $options: 'i' } }")
     List<Comment> searchByText(String websiteId, String text);
 }
