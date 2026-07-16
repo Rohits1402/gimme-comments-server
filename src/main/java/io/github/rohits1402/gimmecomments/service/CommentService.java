@@ -1,10 +1,13 @@
 package io.github.rohits1402.gimmecomments.service;
 
+import io.github.rohits1402.gimmecomments.exception.BadRequestException;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
 import io.github.rohits1402.gimmecomments.model.Comment;
 import io.github.rohits1402.gimmecomments.repository.CommentRepository;
 import io.github.rohits1402.gimmecomments.repository.LikeRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class CommentService {
@@ -36,5 +39,28 @@ public class CommentService {
         }
         likes.deleteByCommentId(commentId);
         comments.deleteById(commentId);
+    }
+
+    public Comment create(String userId, String websiteId, String description, String parentCommentId) {
+        if (parentCommentId != null && !comments.existsById(parentCommentId)) {
+            throw new BadRequestException("No parent comment found with id : " + parentCommentId);
+        }
+        Comment comment = new Comment();
+        comment.setUserId(userId);
+        comment.setWebsiteId(websiteId);
+        comment.setCommentDescription(description);
+        comment.setParentCommentId(parentCommentId);
+        return comments.save(comment);
+    }
+
+    public List<Comment> getAllForWebsite(String websiteId) {
+        return comments.findByWebsiteId(websiteId);
+    }
+
+    public Comment update(String commentId, String description) {
+        Comment comment = comments.findById(commentId)
+                .orElseThrow(() -> new NotFoundException("Comment not found"));
+        comment.setCommentDescription(description);
+        return comments.save(comment);
     }
 }
