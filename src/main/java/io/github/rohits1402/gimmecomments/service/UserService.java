@@ -1,7 +1,9 @@
 package io.github.rohits1402.gimmecomments.service;
 
 import io.github.rohits1402.gimmecomments.exception.ConflictException;
+import io.github.rohits1402.gimmecomments.exception.ForbiddenException;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
+import io.github.rohits1402.gimmecomments.exception.UnauthenticatedException;
 import io.github.rohits1402.gimmecomments.model.Comment;
 import io.github.rohits1402.gimmecomments.model.User;
 import io.github.rohits1402.gimmecomments.model.Website;
@@ -20,15 +22,17 @@ public class UserService {
     private final WebsiteRepository websites;
     private final WebsiteService websiteService;
     private final CommentService commentService;
+    private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository users, LikeRepository likes, CommentRepository comments, WebsiteRepository websites, WebsiteService websiteService, CommentService commentService, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository users, LikeRepository likes, CommentRepository comments, WebsiteRepository websites, WebsiteService websiteService, CommentService commentService, JwtService jwtService, PasswordEncoder passwordEncoder) {
         this.users = users;
         this.likes = likes;
         this.comments = comments;
         this.websites = websites;
         this.websiteService = websiteService;
         this.commentService = commentService;
+        this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -41,6 +45,20 @@ public class UserService {
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         return users.save(user);
+    }
+
+    public String login(String email, String password) {
+        User user = users.findByEmail(email).orElseThrow(() -> new UnauthenticatedException("Invalid credentials"));
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new UnauthenticatedException("Invalid Credentials");
+        }
+        if (!user.isEmailVerified())
+            throw new ForbiddenException("Email is not verified");
+
+        if (!user.isAccountActive())
+            throw new ForbiddenException("Account is deactivated (Contact administrator)");
+
+        return jwtService.generateToken(user.getId());
     }
 
     public void deleteUser(String userId) {

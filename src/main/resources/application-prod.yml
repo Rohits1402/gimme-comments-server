@@ -1,3 +1,6 @@
 spring:
   mongodb:
     uri: ${MONGO_URI}
+app:
+  jwt:
+    secret: ${JWT_SECRET}

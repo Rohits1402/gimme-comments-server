@@ -4,3 +4,6 @@ spring:
   web:
     error:
       include-stacktrace: never
+app:
+  jwt:
+    secret: zNoIfzyml/mMZ+G7EVofxjRshqp0W+4+gV9dw3BBPuo=

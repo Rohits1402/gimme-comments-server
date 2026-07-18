@@ -1,5 +1,6 @@
 package io.github.rohits1402.gimmecomments.controller;
 
+import io.github.rohits1402.gimmecomments.dto.LoginRequest;
 import io.github.rohits1402.gimmecomments.dto.RegisterRequest;
 import io.github.rohits1402.gimmecomments.dto.UserResponse;
 import io.github.rohits1402.gimmecomments.model.User;
@@ -23,6 +24,15 @@ public class AuthController {
     public UserResponse register(@Valid @RequestBody RegisterRequest request) {
         User saved = userService.register(request.name(), request.email(), request.password());
         return UserResponse.from(saved);
+    }
+
+    record TokenEnvelope(String token) {
+    }
+
+    @PostMapping("/login")
+    public TokenEnvelope login(@Valid @RequestBody LoginRequest request) {
+        String token = userService.login(request.email(), request.password());
+        return new TokenEnvelope(token);
     }
 
 }
