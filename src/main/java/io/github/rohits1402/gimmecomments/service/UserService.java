@@ -9,6 +9,7 @@ import io.github.rohits1402.gimmecomments.repository.CommentRepository;
 import io.github.rohits1402.gimmecomments.repository.LikeRepository;
 import io.github.rohits1402.gimmecomments.repository.UserRepository;
 import io.github.rohits1402.gimmecomments.repository.WebsiteRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,14 +20,16 @@ public class UserService {
     private final WebsiteRepository websites;
     private final WebsiteService websiteService;
     private final CommentService commentService;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository users, LikeRepository likes, CommentRepository comments, WebsiteRepository websites, WebsiteService websiteService, CommentService commentService) {
+    public UserService(UserRepository users, LikeRepository likes, CommentRepository comments, WebsiteRepository websites, WebsiteService websiteService, CommentService commentService, PasswordEncoder passwordEncoder) {
         this.users = users;
         this.likes = likes;
         this.comments = comments;
         this.websites = websites;
         this.websiteService = websiteService;
         this.commentService = commentService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public User register(String name, String email, String password) {
@@ -36,7 +39,7 @@ public class UserService {
         User user = new User();
         user.setName(name);
         user.setEmail(email);
-        user.setPassword(password);
+        user.setPassword(passwordEncoder.encode(password));
         return users.save(user);
     }
 
