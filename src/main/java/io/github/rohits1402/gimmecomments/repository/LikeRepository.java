@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface LikeRepository extends MongoRepository<Like, String> {
 
@@ -13,6 +14,8 @@ public interface LikeRepository extends MongoRepository<Like, String> {
     long countByCommentId(String commentId);
 
     boolean existsByUserIdAndCommentId(String userId, String commentId);
+
+    Optional<Like> findByUserIdAndCommentId(String userId, String commentId);
 
     void deleteByCommentId(String commentId);
 

@@ -7,6 +7,7 @@ import io.github.rohits1402.gimmecomments.model.Website;
 import io.github.rohits1402.gimmecomments.service.WebsiteService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class WebsiteController {
     }
 
     @GetMapping
-    public WebsiteListEnvelope getAll(@RequestParam String userId) {   // TODO Week 3: from token
+    public WebsiteListEnvelope getAll(@AuthenticationPrincipal String userId) {
         List<WebsiteResponse> list = websiteService.getAllByUser(userId).stream()
                 .map(WebsiteResponse::from)
                 .toList();
@@ -42,15 +43,15 @@ public class WebsiteController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public WebsiteMsgEnvelope create(@Valid @RequestBody CreateWebsiteRequest request) {
-        Website created = websiteService.create(request.userId(), request.websiteName(),
+    public WebsiteMsgEnvelope create(@AuthenticationPrincipal String userId, @Valid @RequestBody CreateWebsiteRequest request) {
+        Website created = websiteService.create(userId, request.websiteName(),
                 request.websiteDescription(), request.websiteUrl(), request.websiteConfiguration());
         return new WebsiteMsgEnvelope("Website created successfully", WebsiteResponse.from(created));
     }
 
     @GetMapping("/{id}")
-    public WebsiteEnvelope getOne(@PathVariable String id) {
-        return new WebsiteEnvelope(WebsiteResponse.from(websiteService.getById(id)));
+    public WebsiteEnvelope getOne(@PathVariable String id, @AuthenticationPrincipal String userId) {
+        return new WebsiteEnvelope(WebsiteResponse.from(websiteService.getOwned(id, userId)));
     }
 
     @GetMapping("/exists/{id}")
@@ -59,16 +60,19 @@ public class WebsiteController {
         return new MsgEnvelope("Website found with id : " + id);
     }
 
+
     @PatchMapping("/{id}")
-    public WebsiteMsgEnvelope update(@PathVariable String id, @RequestBody UpdateWebsiteRequest request) {
-        Website updated = websiteService.update(id, request.websiteName(),
+    public WebsiteMsgEnvelope update(@PathVariable String id,
+                                     @AuthenticationPrincipal String userId,
+                                     @RequestBody UpdateWebsiteRequest request) {
+        Website updated = websiteService.update(id, userId, request.websiteName(),
                 request.websiteDescription(), request.websiteConfiguration());
         return new WebsiteMsgEnvelope("Website updated successfully", WebsiteResponse.from(updated));
     }
 
     @DeleteMapping("/{id}")
-    public MsgEnvelope delete(@PathVariable String id) {
-        websiteService.deleteWebsite(id);
+    public MsgEnvelope delete(@PathVariable String id, @AuthenticationPrincipal String userId) {
+        websiteService.deleteWebsite(id, userId);
         return new MsgEnvelope("Website Profile deleted");
     }
 }

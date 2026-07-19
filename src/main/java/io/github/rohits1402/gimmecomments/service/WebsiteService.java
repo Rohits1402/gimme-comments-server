@@ -24,6 +24,12 @@ public class WebsiteService {
         this.likes = likes;
     }
 
+    public Website  getOwned(String id, String callerUserId) {
+        return websites.findById(id)
+                .filter(w -> w.getUserId().equals(callerUserId))
+                .orElseThrow(() -> new NotFoundException("Website with given id not found"));
+    }
+
     public Website create(String userId, String websiteName, String websiteDescription, String websiteUrl, Map<String, Object> websiteConfiguration) {
         if (websites.existsByWebsiteUrl(websiteUrl)) throw new ConflictException("Website already exist!");
 
@@ -47,9 +53,9 @@ public class WebsiteService {
                 .orElseThrow(() -> new NotFoundException("Website with given id not found"));
     }
 
-    public Website update(String id, String websiteName, String websiteDescription,
+    public Website update(String id, String callerId, String websiteName, String websiteDescription,
                           Map<String, Object> websiteConfiguration) {
-        Website website = getById(id);
+        Website website = getOwned(id, callerId);
         if (websiteName != null) website.setWebsiteName(websiteName);
         if (websiteDescription != null) website.setWebsiteDescription(websiteDescription);
         if (websiteConfiguration != null) website.setWebsiteConfiguration(websiteConfiguration);
@@ -57,10 +63,8 @@ public class WebsiteService {
     }
 
 
-    public void deleteWebsite(String websiteId) {
-        if (!websites.existsById(websiteId)) {
-            throw new NotFoundException("Website not found");
-        }
+    public void deleteWebsite(String websiteId, String callerUserId) {
+        getOwned(websiteId, callerUserId);
         purgeWebsite(websiteId);
     }
 

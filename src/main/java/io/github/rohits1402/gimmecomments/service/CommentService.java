@@ -3,6 +3,7 @@ package io.github.rohits1402.gimmecomments.service;
 import io.github.rohits1402.gimmecomments.exception.BadRequestException;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
 import io.github.rohits1402.gimmecomments.model.Comment;
+import io.github.rohits1402.gimmecomments.model.Website;
 import io.github.rohits1402.gimmecomments.repository.CommentRepository;
 import io.github.rohits1402.gimmecomments.repository.LikeRepository;
 import org.springframework.stereotype.Service;
@@ -20,9 +21,8 @@ public class CommentService {
     }
 
 
-    public void deleteComment(String commentId) {
-        if (!comments.existsById(commentId))
-            throw new NotFoundException("Comment not found");
+    public void deleteComment(String callerUserId, String commentId) {
+        getOwned(callerUserId, commentId);
 
         deleteTree(commentId);
     }
@@ -53,13 +53,18 @@ public class CommentService {
         return comments.save(comment);
     }
 
+    public Comment getOwned(String callerUserId, String id) {
+        return comments.findById(id)
+                .filter(c -> c.getUserId().equals(callerUserId))
+                .orElseThrow(() -> new NotFoundException("Comment not found"));
+    }
+
     public List<Comment> getAllForWebsite(String websiteId) {
         return comments.findByWebsiteId(websiteId);
     }
 
-    public Comment update(String commentId, String description) {
-        Comment comment = comments.findById(commentId)
-                .orElseThrow(() -> new NotFoundException("Comment not found"));
+    public Comment update(String callerUserId, String commentId, String description) {
+        Comment comment = getOwned(callerUserId, commentId);
         comment.setCommentDescription(description);
         return comments.save(comment);
     }
