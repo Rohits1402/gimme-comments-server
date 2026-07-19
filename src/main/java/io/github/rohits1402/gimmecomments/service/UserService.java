@@ -74,4 +74,9 @@ public class UserService {
         }                                                          //    already be gone — idempotent)
         users.deleteById(userId);                                  // 4. the user record, LAST
     }
+
+    public User getById(String id) {
+        return users.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+    }
 }

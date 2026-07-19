@@ -32,4 +32,13 @@ public class JwtService {
                 .signWith(key)
                 .compact();
     }
+
+    public String extractUserId(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+    }
 }
