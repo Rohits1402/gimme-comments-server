@@ -1,10 +1,8 @@
 package io.github.rohits1402.gimmecomments.service;
 
-import io.github.rohits1402.gimmecomments.exception.ConflictException;
-import io.github.rohits1402.gimmecomments.exception.ForbiddenException;
-import io.github.rohits1402.gimmecomments.exception.NotFoundException;
-import io.github.rohits1402.gimmecomments.exception.UnauthenticatedException;
+import io.github.rohits1402.gimmecomments.exception.*;
 import io.github.rohits1402.gimmecomments.model.Comment;
+import io.github.rohits1402.gimmecomments.model.OtpPurpose;
 import io.github.rohits1402.gimmecomments.model.User;
 import io.github.rohits1402.gimmecomments.model.Website;
 import io.github.rohits1402.gimmecomments.repository.CommentRepository;
@@ -24,8 +22,9 @@ public class UserService {
     private final CommentService commentService;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final OtpService otpService;
 
-    public UserService(UserRepository users, LikeRepository likes, CommentRepository comments, WebsiteRepository websites, WebsiteService websiteService, CommentService commentService, JwtService jwtService, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository users, LikeRepository likes, CommentRepository comments, WebsiteRepository websites, WebsiteService websiteService, CommentService commentService, JwtService jwtService, PasswordEncoder passwordEncoder, OtpService otpService) {
         this.users = users;
         this.likes = likes;
         this.comments = comments;
@@ -34,6 +33,7 @@ public class UserService {
         this.commentService = commentService;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
+        this.otpService = otpService;
     }
 
     public User register(String name, String email, String password) {
@@ -78,5 +78,38 @@ public class UserService {
     public User getById(String id) {
         return users.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    public void sendVerificationOtp(String email) {
+        users.findByEmail(email).ifPresent(user -> {
+            if (!user.isEmailVerified()) {
+                otpService.generate(email, OtpPurpose.ACCOUNT_VERIFICATION);
+            }
+        });
+    }
+
+    public void verifyAccount(String email, String otp) {
+        User user = users.findByEmail(email).orElseThrow(() -> new BadRequestException("OTP is invalid"));
+        otpService.verifyAndConsume(email, otp, OtpPurpose.ACCOUNT_VERIFICATION);
+        user.setEmailVerified(true);
+        users.save(user);
+    }
+
+    public void sendPasswordResetOtp(String email) {
+        users.findByEmail(email).ifPresent(user -> {
+            otpService.generate(email, OtpPurpose.PASSWORD_RESET);
+        });
+    }
+
+    public void verifyResetOtp(String email, String otp) {
+        otpService.verify(email, otp, OtpPurpose.PASSWORD_RESET);
+    }
+
+    public void resetPassword(String email, String otp, String newPassword) {
+        User user = users.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("OTP is invalid"));
+        otpService.verifyAndConsume(email, otp, OtpPurpose.PASSWORD_RESET);
+        user.setPassword(passwordEncoder.encode(newPassword));
+        users.save(user);
     }
 }
