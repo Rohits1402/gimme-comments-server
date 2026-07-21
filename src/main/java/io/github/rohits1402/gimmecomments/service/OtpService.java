@@ -18,9 +18,11 @@ public class OtpService {
     private static final Duration OTP_VALIDITY = Duration.ofMinutes(10);
     private final OtpTokenRepository otpTokens;
     private final SecureRandom random = new SecureRandom();
+    private final EmailService emailService;
 
-    public OtpService(OtpTokenRepository otpTokens) {
+    public OtpService(OtpTokenRepository otpTokens, EmailService emailService) {
         this.otpTokens = otpTokens;
+        this.emailService = emailService;
     }
 
     public String generate(String email, OtpPurpose purpose) {
@@ -33,7 +35,7 @@ public class OtpService {
         otpToken.setExpiresAt(Instant.now().plus(OTP_VALIDITY));
         otpTokens.save(otpToken);
 
-        log.info("OTP for {} ({}): {}", email, purpose, code);      // TEMPORARY: Day 20 emails this instead
+        emailService.sendOtp(email, code, purpose);
         return code;
     }
 

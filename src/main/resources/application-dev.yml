@@ -7,6 +7,3 @@ spring:
 app:
   jwt:
     secret: zNoIfzyml/mMZ+G7EVofxjRshqp0W+4+gV9dw3BBPuo=
-logging:
-  level:
-    org.springframework.security.web: DEBUG
