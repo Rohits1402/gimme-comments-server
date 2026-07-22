@@ -4,6 +4,13 @@ spring:
   web:
     error:
       include-stacktrace: never
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 app:
   jwt:
     secret: zNoIfzyml/mMZ+G7EVofxjRshqp0W+4+gV9dw3BBPuo=
+  upload:
+    dir: ./uploads
+    base-url: http://localhost:8080/uploads

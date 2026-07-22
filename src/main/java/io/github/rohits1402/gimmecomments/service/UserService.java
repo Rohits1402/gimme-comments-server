@@ -11,6 +11,7 @@ import io.github.rohits1402.gimmecomments.repository.UserRepository;
 import io.github.rohits1402.gimmecomments.repository.WebsiteRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class UserService {
@@ -23,8 +24,9 @@ public class UserService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
+    private final FileStorageService fileStorageService;
 
-    public UserService(UserRepository users, LikeRepository likes, CommentRepository comments, WebsiteRepository websites, WebsiteService websiteService, CommentService commentService, JwtService jwtService, PasswordEncoder passwordEncoder, OtpService otpService) {
+    public UserService(UserRepository users, LikeRepository likes, CommentRepository comments, WebsiteRepository websites, WebsiteService websiteService, CommentService commentService, JwtService jwtService, PasswordEncoder passwordEncoder, OtpService otpService, FileStorageService fileStorageService) {
         this.users = users;
         this.likes = likes;
         this.comments = comments;
@@ -34,6 +36,7 @@ public class UserService {
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.otpService = otpService;
+        this.fileStorageService = fileStorageService;
     }
 
     public User register(String name, String email, String password) {
@@ -112,4 +115,15 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(newPassword));
         users.save(user);
     }
+
+    public User updateProfileImage(String userId, MultipartFile file) {
+        User user = getById(userId);
+        String oldUrl = user.getProfileImage();
+        String newUrl = fileStorageService.store(file);
+        user.setProfileImage(newUrl);
+        User saved = users.save(user);
+        fileStorageService.delete(oldUrl);
+        return saved;
+    }
+
 }
