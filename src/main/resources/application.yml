@@ -7,3 +7,9 @@ spring:
 app:
   jwt:
     expiration-ms: 2592000000
+logging:
+  level:
+    io.github.rohits1402.gimmecomments: INFO
+    org.springframework: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%X{requestId}] %logger{36} - %msg%n"
