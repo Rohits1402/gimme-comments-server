@@ -17,3 +17,6 @@ app:
     secret: ${JWT_SECRET}
   mail:
     from: ${MAIL_USERNAME}
+  s3:
+    bucket: ${S3_BUCKET}
+    region: ap-south-1
