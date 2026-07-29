@@ -1,10 +1,7 @@
 package io.github.rohits1402.gimmecomments.service;
 
 import io.github.rohits1402.gimmecomments.exception.*;
-import io.github.rohits1402.gimmecomments.model.Comment;
-import io.github.rohits1402.gimmecomments.model.OtpPurpose;
-import io.github.rohits1402.gimmecomments.model.User;
-import io.github.rohits1402.gimmecomments.model.Website;
+import io.github.rohits1402.gimmecomments.model.*;
 import io.github.rohits1402.gimmecomments.repository.CommentRepository;
 import io.github.rohits1402.gimmecomments.repository.LikeRepository;
 import io.github.rohits1402.gimmecomments.repository.UserRepository;
@@ -124,6 +121,39 @@ public class UserService {
         User saved = users.save(user);
         fileStorageService.delete(oldUrl);
         return saved;
+    }
+
+    public User updateProfile(String userId, String name, Gender gender, String birthday) {
+        if ((name == null || name.isEmpty()) && gender == null && (birthday == null || birthday.isEmpty()))
+            throw new BadRequestException("Please provide fields to update");
+
+        User user = getById(userId);
+        if (name != null && !name.isEmpty())
+            user.setName(name);
+
+        if (gender != null)
+            user.setGender(gender);
+
+        if (birthday != null && !birthday.isEmpty())
+            user.setBirthday(birthday);
+
+        return users.save(user);
+
+    }
+
+    public User updatePassword(String userId, String oldPassword, String newPassword) {
+        User user = getById(userId);
+
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword()))
+            throw new BadRequestException("Wrong Old Password");
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return users.save(user);
+    }
+
+    public void deleteProfile(String userId) {
+        deleteUser(userId);
     }
 
 }
