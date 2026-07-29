@@ -15,11 +15,13 @@ public class CommentService {
     private final CommentRepository comments;
     private final LikeRepository likes;
 
-    public CommentService(CommentRepository comments, LikeRepository likes) {
+    private final WebsiteService websiteService;
+
+    public CommentService(CommentRepository comments, LikeRepository likes, WebsiteService websiteService) {
         this.comments = comments;
         this.likes = likes;
+        this.websiteService = websiteService;
     }
-
 
     public void deleteComment(String callerUserId, String commentId) {
         getOwned(callerUserId, commentId);
@@ -42,6 +44,7 @@ public class CommentService {
     }
 
     public Comment create(String userId, String websiteId, String description, String parentCommentId) {
+        websiteService.requireExists(websiteId);
         if (parentCommentId != null && !comments.existsById(parentCommentId)) {
             throw new BadRequestException("No parent comment found with id : " + parentCommentId);
         }

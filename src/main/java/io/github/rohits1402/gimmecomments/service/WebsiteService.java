@@ -24,7 +24,13 @@ public class WebsiteService {
         this.likes = likes;
     }
 
-    public Website  getOwned(String id, String callerUserId) {
+    public void requireExists(String websiteId) {
+        if (!websites.existsById(websiteId)) {
+            throw new NotFoundException("Website with given id not found");
+        }
+    }
+
+    public Website getOwned(String id, String callerUserId) {
         return websites.findById(id)
                 .filter(w -> w.getUserId().equals(callerUserId))
                 .orElseThrow(() -> new NotFoundException("Website with given id not found"));
