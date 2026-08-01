@@ -7,6 +7,7 @@ import tools.jackson.databind.annotation.JsonNaming;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record CreateCommentRequest(
+        @JsonProperty("comment_description")
         @NotBlank(message = "Please provide comment description") String commentDescription,
         @JsonProperty("comment_parent") String commentParent
 ) {

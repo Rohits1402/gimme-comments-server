@@ -1,5 +1,6 @@
 package io.github.rohits1402.gimmecomments.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.rohits1402.gimmecomments.model.Gender;
 import io.github.rohits1402.gimmecomments.model.User;
 
@@ -8,8 +9,8 @@ public record UserResponse(
         String name,
         String email,
         Gender gender,
-        String profileImage,
-        boolean emailVerified
+        @JsonProperty("profile_image") String profileImage,
+        @JsonProperty("email_verified") boolean emailVerified
 ) {
     public static UserResponse from(User user) {
         return new UserResponse(

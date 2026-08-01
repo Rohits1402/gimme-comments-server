@@ -5,5 +5,8 @@ import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public record UpdatePasswordRequest(String oldPassword, String newPassword) {
+public record UpdatePasswordRequest(
+        @JsonProperty("old_password") String oldPassword,
+        @JsonProperty("new_password") String newPassword
+) {
 }

@@ -13,8 +13,8 @@ public record CommentResponse(
         @JsonProperty("by_user") String userId,
         @JsonProperty("on_website") String websiteId,
         @JsonProperty("comment_parent") String parentCommentId,
-        String commentDescription,
-        Instant createdAt
+        @JsonProperty("comment_description") String commentDescription,
+        @JsonProperty("created_at") Instant createdAt
 ) {
     public static CommentResponse from(Comment c) {
         return new CommentResponse(c.getId(), c.getUserId(), c.getWebsiteId(),
