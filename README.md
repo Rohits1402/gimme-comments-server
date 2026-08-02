@@ -5,7 +5,7 @@
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-brightgreen)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
-![Tests](https://img.shields.io/badge/tests-8%20passing-brightgreen)
+[![CI](https://github.com/Rohits1402/gimme-comments-server/actions/workflows/ci.yml/badge.svg)](https://github.com/Rohits1402/gimme-comments-server/actions/workflows/ci.yml)
 
 ---
 
