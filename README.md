@@ -116,4 +116,6 @@ exception/    exception hierarchy and the global handler
 
 ## Licence
 
-Not yet chosen.
+[MIT](LICENSE) — the Java source, configuration, tests, and documentation in this repository.
+
+The compiled widget bundle under `src/main/resources/static/build/` is the front-end from the original 2023 project, which was built by a team. It is included here so the server can serve it, and its authorship is not solely mine.
