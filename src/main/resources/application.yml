@@ -11,6 +11,12 @@ spring:
 app:
   jwt:
     expiration-ms: 2592000000
+management:
+  endpoint:
+    health:
+      group:
+        readiness:
+          include: readinessState, mongo
 logging:
   level:
     io.github.rohits1402.gimmecomments: INFO
