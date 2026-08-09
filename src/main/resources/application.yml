@@ -17,6 +17,9 @@ management:
       group:
         readiness:
           include: readinessState, mongo
+  health:
+    mongodb:
+      enabled: false
 logging:
   level:
     io.github.rohits1402.gimmecomments: INFO
