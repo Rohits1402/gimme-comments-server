@@ -1,0 +1,20 @@
+services:
+  mongo:
+    image: mongo:8
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_MONGODB_URI: mongodb://mongo:27017/gimmecomments_dev
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:
