@@ -17,3 +17,7 @@ app:
 logging:
   level:
     io.github.rohits1402.gimmecomments: DEBUG
+management:
+  endpoint:
+    health:
+      show-details: always
