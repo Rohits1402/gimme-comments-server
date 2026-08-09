@@ -31,17 +31,25 @@ It is not a line-by-line translation. The port deliberately fixes a number of re
 
 ## Quick start
 
-Requires JDK 21 and a MongoDB running on `localhost:27017`.
+Requires Docker. Nothing else — no JDK, no MongoDB installation.
 
 ```bash
 git clone https://github.com/Rohits1402/gimme-comments-server.git
 cd gimme-comments-server
+docker compose up --build
+```
+
+That starts the application and a MongoDB alongside it on a private network, with a named volume so the database survives being restarted. The app listens on **8080**; MongoDB is published on **27018**, deliberately not 27017, so it cannot collide with a MongoDB you already have installed.
+
+Then open **http://localhost:8080/swagger-ui.html** to browse and call every endpoint.
+
+**Without Docker**, you need JDK 21 and a MongoDB on `localhost:27017`:
+
+```bash
 ./mvnw spring-boot:run
 ```
 
-The application starts on port 8080 with the `dev` profile: local MongoDB, files written to `./uploads`, and emails printed to the console instead of sent.
-
-Then open **http://localhost:8080/swagger-ui.html** to browse and call every endpoint.
+Either way the `dev` profile applies: files are written to `./uploads` and emails are printed to the console instead of sent.
 
 ## Configuration
 
