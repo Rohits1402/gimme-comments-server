@@ -36,6 +36,9 @@ public class SecurityConfig {
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/comments/comment/**").permitAll()
+                        // The widget runs on third-party sites and checks this before rendering,
+                        // as an anonymous visitor. Public in the original app for the same reason.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/websites/exists/**").permitAll()
                         .anyRequest().authenticated()
                 ).addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
