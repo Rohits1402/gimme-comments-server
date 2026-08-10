@@ -1,21 +1,30 @@
-fetch('https://gimme-comments-server.onrender.com/api/v1/initialization')
-  .then((res) => res.json())
-  .then((res) => {
-    console.log('response is', res);
-    const jsFiles = res.jsFiles;
-    const cssFiles = res.cssFiles;
+(function () {
+  // Read the origin this script was served from, so the widget works against any
+  // deployment without being recompiled. Must be read synchronously: by the time
+  // the fetch below resolves, document.currentScript is already null.
+  var BASE = new URL(document.currentScript.src).origin;
 
-    elements = jsFiles.map((eachFileName) => {
-      let script = document.createElement('script');
-      script.src = `https://gimme-comments-server.onrender.com/build/static/js/${eachFileName}`;
-      document.head.appendChild(script);
-      return script;
+  fetch(BASE + '/api/v1/initialization')
+    .then(function (res) {
+      if (!res.ok) throw new Error('initialization returned ' + res.status);
+      return res.json();
+    })
+    .then(function (manifest) {
+      // Stylesheets first, so the widget is styled the moment it renders.
+      (manifest.cssFiles || []).forEach(function (name) {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = BASE + '/build/static/css/' + name;
+        document.head.appendChild(link);
+      });
+
+      (manifest.jsFiles || []).forEach(function (name) {
+        var script = document.createElement('script');
+        script.src = BASE + '/build/static/js/' + name;
+        document.head.appendChild(script);
+      });
+    })
+    .catch(function (err) {
+      console.error('GimmeComments failed to load:', err);
     });
-    elements = cssFiles.map((eachFileName) => {
-      let link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = `https://gimme-comments-server.onrender.com/build/static/css/${eachFileName}`;
-      document.head.appendChild(link);
-      return link;
-    });
-  });
+})();
