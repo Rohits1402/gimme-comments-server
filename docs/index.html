@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GimmeComments — comments as a service</title>
+  <meta name="description" content="A live demo of GimmeComments: a Spring Boot service that gives any website a working comment box from one script tag.">
+  <style>
+    :root {
+      --gc-ink: #1a1a1a;
+      --gc-muted: #5c5c5c;
+      --gc-line: #e2e2e2;
+      --gc-accent: #2f6f4f;
+      --gc-code-bg: #1e1e1e;
+    }
+
+    .gc-page {
+      margin: 0;
+      background: #fbfbfa;
+      color: var(--gc-ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+    }
+
+    .gc-wrap { max-width: 720px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+
+    .gc-title { font-size: 2.1rem; line-height: 1.2; margin: 0 0 .4rem; font-weight: 650; letter-spacing: -0.02em; }
+    .gc-tagline { font-size: 1.1rem; color: var(--gc-muted); margin: 0 0 2.5rem; }
+
+    .gc-h2 { font-size: 1.15rem; font-weight: 650; margin: 2.75rem 0 .75rem; letter-spacing: -0.01em; }
+    .gc-p { margin: 0 0 1rem; }
+    .gc-small { font-size: .9rem; color: var(--gc-muted); }
+
+    .gc-pre {
+      background: var(--gc-code-bg); color: #e8e8e8; border-radius: 8px;
+      padding: 1rem 1.1rem; overflow-x: auto; font-size: .85rem; line-height: 1.55;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      margin: 0 0 1rem;
+    }
+    .gc-pre .gc-tag { color: #7fb3ff; }
+    .gc-pre .gc-attr { color: #c3e88d; }
+
+    .gc-note {
+      border-left: 3px solid var(--gc-accent); background: #f2f7f4;
+      padding: .85rem 1rem; border-radius: 0 6px 6px 0; margin: 0 0 1rem;
+      font-size: .92rem;
+    }
+
+    .gc-widget-frame {
+      border: 1px solid var(--gc-line); border-radius: 10px; padding: 1.25rem;
+      background: #fff; margin-top: 1rem; min-height: 180px;
+    }
+
+    .gc-links { margin: 2.5rem 0 0; padding: 1.25rem 0 0; border-top: 1px solid var(--gc-line); font-size: .92rem; }
+    .gc-links a { color: var(--gc-accent); }
+
+    @media (prefers-color-scheme: dark) {
+      .gc-page { background: #141414; color: #ededed; }
+      .gc-note { background: #17241d; }
+      .gc-widget-frame { background: #1b1b1b; border-color: #333; }
+      .gc-links { border-color: #333; }
+      :root { --gc-muted: #a3a3a3; --gc-line: #333; --gc-accent: #7fc9a0; }
+    }
+  </style>
+</head>
+<body class="gc-page">
+<div class="gc-wrap">
+
+  <h1 class="gc-title">GimmeComments</h1>
+  <p class="gc-tagline">Comments as a service. One script tag, and any website gets a working comment box.</p>
+
+  <p class="gc-p">
+    This page is a plain static file hosted on GitHub Pages. It has no backend of its own.
+    Everything below the line is loaded from a Spring&nbsp;Boot service running somewhere else entirely —
+    which is the whole point.
+  </p>
+
+  <h2 class="gc-h2">How a site embeds it</h2>
+
+  <pre class="gc-pre">&lt;<span class="gc-tag">div</span> <span class="gc-attr">id</span>="gimme-comments-root"
+     <span class="gc-attr">data-gimme_comments_website_id</span>="your-website-id"&gt;&lt;/<span class="gc-tag">div</span>&gt;
+
+&lt;<span class="gc-tag">script</span> <span class="gc-attr">src</span>="https://gimme-comments-server-p7av.onrender.com/initialize-gimme-comments.js"&gt;&lt;/<span class="gc-tag">script</span>&gt;</pre>
+
+  <p class="gc-p gc-small">
+    The loader asks the server which bundle files are current, then injects them. It works out its own
+    origin from the script tag it was served by, so the same snippet works against any deployment.
+  </p>
+
+  <h2 class="gc-h2">Here it is, running</h2>
+
+  <div class="gc-note">
+    <strong>First load may take up to a minute.</strong> The API runs on a free instance that sleeps
+    after inactivity, so the first request has to wake it. Reading comments is public; posting one
+    needs an account.
+  </div>
+
+  <div class="gc-widget-frame">
+    <div id="gimme-comments-root" data-gimme_comments_website_id="6a7a0c4e1516c9db88f2b67a"></div>
+  </div>
+
+  <div class="gc-links">
+    <p class="gc-p">
+      <a href="https://github.com/Rohits1402/gimme-comments-server">Source on GitHub</a> &nbsp;·&nbsp;
+      <a href="https://gimme-comments-server-p7av.onrender.com/swagger-ui.html">API documentation</a>
+    </p>
+    <p class="gc-p gc-small">
+      Java 21 · Spring Boot 4 · MongoDB Atlas · AWS S3 · Docker. A rewrite of a 2023 Node/Express
+      service, deliberately fixing several security defects in the original.
+    </p>
+  </div>
+
+</div>
+
+<script src="https://gimme-comments-server-p7av.onrender.com/initialize-gimme-comments.js"></script>
+</body>
+</html>

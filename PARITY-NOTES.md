@@ -23,9 +23,19 @@
 | 13 | OTP generate-otp response | returned "OTP send to email" only if the email existed; unknown email threw "User does not exist" | always returns the same generic "If an account exists, an OTP has been sent"; no OTP created for unknown emails | User-enumeration defense, consistent with deviation #9. Verify/reset return "OTP is invalid" for unknown email too, indistinguishable from a wrong code. |
 | 14 | `create_comment` on a non-existent website | old code validated the parent comment but never the website — a comment could be attached to a website id referring to nothing, creating orphan data | `CommentService.create` calls `websiteService.requireExists(websiteId)` first; an unknown website returns **404 "Website with given id not found"** | Same defect as deviation #10, one level up. MongoDB has no foreign keys, so referential integrity is the application's job and nothing else is checking. Reads stay permissive — `GET` on an unknown website still returns an empty list, because that is a truthful answer and the widget calls it on every page load. Added Day 26. |
 
-## Endpoint coverage (audited Day 25 — complete)
+## Endpoint coverage (audited Day 25)
 
-Every route in the original Express server now exists in the Spring Boot port:
+**Parity has three separate dimensions, and checking one says nothing about the others:**
+
+| Dimension | Audited | Found |
+|---|---|---|
+| Which endpoints exist | Day 25 | complete |
+| Field names inside responses | Day 28 | `UserResponse` was camelCase where the original was snake_case |
+| **Who is allowed to reach each endpoint** | **Day 35** | **`GET /websites/exists/{id}` required authentication; the original left it public on purpose, because the widget calls it as an anonymous visitor on a third-party site** |
+
+That last one was introduced on Day 21 when the security config was narrowed from a blanket `permitAll` to an explicit list. The endpoint was ported correctly; the rule that made it public was not. It surfaced only when the widget was embedded from a real external origin on Day 35.
+
+Every route in the original Express server exists in the Spring Boot port:
 
 | Old route | Status |
 |---|---|
