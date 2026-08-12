@@ -10,6 +10,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 public class UserService {
     private final UserRepository users;
@@ -78,6 +82,12 @@ public class UserService {
     public User getById(String id) {
         return users.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    public Map<String, User> getAllByIds(Collection<String> ids) {
+        Map<String, User> byId = new HashMap<>();
+        users.findAllById(ids).forEach(user -> byId.put(user.getId(), user));
+        return byId;
     }
 
     public void sendVerificationOtp(String email) {

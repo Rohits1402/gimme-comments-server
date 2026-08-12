@@ -6,18 +6,22 @@ import io.github.rohits1402.gimmecomments.dto.LikeResponse;
 import io.github.rohits1402.gimmecomments.dto.UpdateCommentRequest;
 import io.github.rohits1402.gimmecomments.model.Comment;
 import io.github.rohits1402.gimmecomments.model.Like;
+import io.github.rohits1402.gimmecomments.model.User;
 import io.github.rohits1402.gimmecomments.service.CommentService;
 import io.github.rohits1402.gimmecomments.service.LikeService;
+import io.github.rohits1402.gimmecomments.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/comments")
 public class CommentController {
+    private final UserService userService;
     private final CommentService commentService;
     private final LikeService likeService;
 
@@ -34,7 +38,8 @@ public class CommentController {
     record MsgEnvelope(String msg) {
     }
 
-    public CommentController(CommentService commentService, LikeService likeService) {
+    public CommentController(UserService userService, CommentService commentService, LikeService likeService) {
+        this.userService = userService;
         this.commentService = commentService;
         this.likeService = likeService;
     }
@@ -48,8 +53,13 @@ public class CommentController {
 
     @GetMapping("/comment/{websiteId}")
     public CommentListEnvelope getAll(@PathVariable String websiteId) {
-        List<CommentResponse> list = commentService.getAllForWebsite(websiteId).stream()
-                .map(CommentResponse::from)
+        List<Comment> comments = commentService.getAllForWebsite(websiteId);
+
+        List<String> authorIds = comments.stream().map(Comment::getUserId).distinct().toList();
+        Map<String, User> authors = userService.getAllByIds(authorIds);
+
+        List<CommentResponse> list = comments.stream()
+                .map(comment -> CommentResponse.from(comment, authors.get(comment.getUserId())))
                 .toList();
         return new CommentListEnvelope(list);
     }
@@ -60,14 +70,14 @@ public class CommentController {
                                      @Valid @RequestBody CreateCommentRequest request) {
         Comment created = commentService.create(userId, websiteId,
                 request.commentDescription(), request.commentParent());
-        return new CommentMsgEnvelope("Comment created successfully", CommentResponse.from(created));
+        return new CommentMsgEnvelope("Comment created successfully", CommentResponse.from(created, userService.getById(userId)));
     }
 
     @PatchMapping("/comment/{commentId}")
     public CommentMsgEnvelope update(@AuthenticationPrincipal String userId, @PathVariable String commentId,
                                      @Valid @RequestBody UpdateCommentRequest request) {
         Comment updated = commentService.update(userId, commentId, request.commentDescription());
-        return new CommentMsgEnvelope("Comment updated successfully", CommentResponse.from(updated));
+        return new CommentMsgEnvelope("Comment updated successfully",CommentResponse.from(updated, userService.getById(userId)));
     }
 
     @PostMapping("/like/{commentId}")
