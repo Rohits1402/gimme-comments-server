@@ -28,7 +28,7 @@ It is not a line-by-line translation. The port deliberately fixes a number of re
 | Persistence | MongoDB via Spring Data (local for dev, Atlas for prod) |
 | Authentication | JWT (jjwt 0.12.6), bcrypt password hashing |
 | File storage | Local disk in dev, AWS S3 in prod — one interface, two implementations |
-| Email | Logged to console in dev, Gmail SMTP in prod |
+| Email | Logged to console in dev, Brevo over HTTPS in prod |
 | API documentation | springdoc-openapi 3.0.3 → Swagger UI |
 | Tests | JUnit 6, Mockito, MockMvc slice tests |
 | Build | Maven (wrapper included) |
@@ -63,9 +63,12 @@ The `dev` profile needs nothing. The `prod` profile reads every secret from the 
 |---|---|
 | `MONGO_URI` | MongoDB Atlas connection string |
 | `JWT_SECRET` | Base64 signing key for tokens |
-| `MAIL_USERNAME` / `MAIL_PASSWORD` | Gmail SMTP account and app password |
+| `BREVO_API_KEY` | Brevo transactional email API key |
+| `MAIL_FROM` | Sender address, verified in Brevo |
 | `S3_BUCKET` | Bucket name for profile images |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Read by the AWS SDK's default credential chain |
+
+Email goes out over Brevo's HTTPS API rather than SMTP because the free hosting tier blocks outbound connections on the SMTP ports. An HTTP call on 443 is not subject to that restriction.
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
@@ -99,7 +102,7 @@ flowchart LR
     S --> F[FileStorageService]
     F --> D[Local disk / S3]
     S --> E[EmailService]
-    E --> G[Console / Gmail SMTP]
+    E --> G[Console / Brevo HTTPS API]
 ```
 
 Requests pass through a filter chain that stamps a request id into the logging context, then reads and verifies the JWT. Controllers handle HTTP and shape responses; services own the rules; repositories talk to MongoDB. Exceptions are translated to the API's `{"msg": "..."}` error format in one place.
