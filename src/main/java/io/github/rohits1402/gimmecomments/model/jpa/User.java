@@ -1,5 +1,6 @@
 package io.github.rohits1402.gimmecomments.model.jpa;
 
+import io.github.rohits1402.gimmecomments.model.Gender;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,8 +33,18 @@ public class User {
     @Column(name = "profile_image", length = 500)
     private String profileImage;
 
-    @Column(nullable = false)
-    private boolean verified = false;
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
+    @Column(name = "account_active", nullable = false)
+    private boolean accountActive = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private Gender gender = Gender.MALE;
+
+    @Column(nullable = false, length = 20)
+    private String birthday = "";
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
