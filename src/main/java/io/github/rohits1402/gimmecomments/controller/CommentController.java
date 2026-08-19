@@ -6,7 +6,7 @@ import io.github.rohits1402.gimmecomments.dto.LikeResponse;
 import io.github.rohits1402.gimmecomments.dto.UpdateCommentRequest;
 import io.github.rohits1402.gimmecomments.model.Comment;
 import io.github.rohits1402.gimmecomments.model.Like;
-import io.github.rohits1402.gimmecomments.model.User;
+import io.github.rohits1402.gimmecomments.model.jpa.User;
 import io.github.rohits1402.gimmecomments.service.CommentService;
 import io.github.rohits1402.gimmecomments.service.LikeService;
 import io.github.rohits1402.gimmecomments.service.UserService;

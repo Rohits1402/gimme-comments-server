@@ -1,7 +1,7 @@
 package io.github.rohits1402.gimmecomments.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.rohits1402.gimmecomments.model.User;
+import io.github.rohits1402.gimmecomments.model.jpa.User;
 
 public record AuthorResponse(
         String id,
@@ -12,6 +12,6 @@ public record AuthorResponse(
         if (user == null) {
             return new AuthorResponse(null, "Deleted user", null);
         }
-        return new AuthorResponse(user.getId(), user.getName(), user.getProfileImage());
+        return new AuthorResponse(user.getId().toString(), user.getName(), user.getProfileImage());
     }
 }

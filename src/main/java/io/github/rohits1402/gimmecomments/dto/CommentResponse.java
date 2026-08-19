@@ -2,7 +2,7 @@ package io.github.rohits1402.gimmecomments.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.rohits1402.gimmecomments.model.Comment;
-import io.github.rohits1402.gimmecomments.model.User;
+import io.github.rohits1402.gimmecomments.model.jpa.User;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 

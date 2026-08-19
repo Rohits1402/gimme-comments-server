@@ -2,7 +2,7 @@ package io.github.rohits1402.gimmecomments.controller;
 
 import io.github.rohits1402.gimmecomments.config.SecurityConfig;
 import io.github.rohits1402.gimmecomments.exception.ConflictException;
-import io.github.rohits1402.gimmecomments.model.User;
+import io.github.rohits1402.gimmecomments.model.jpa.User;
 import io.github.rohits1402.gimmecomments.service.JwtService;
 import io.github.rohits1402.gimmecomments.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -32,7 +34,7 @@ public class AuthControllerTest {
     @Test
     void register_returns201_andNeverLeaksThePassword() throws Exception {
         User saved = new User();
-        saved.setId("abc123");
+        saved.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
         saved.setName("Rohit");
         saved.setEmail("rohit@example.com");
         saved.setPassword("$2a$10$averyrealbcrypthash");
@@ -48,7 +50,7 @@ public class AuthControllerTest {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value("abc123"))
+                .andExpect(jsonPath("$.id").value("11111111-1111-1111-1111-111111111111"))
                 .andExpect(jsonPath("$.email").value("rohit@example.com"))
                 .andExpect(jsonPath("$.password").doesNotExist());
     }
