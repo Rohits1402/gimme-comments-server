@@ -1,7 +1,7 @@
 package io.github.rohits1402.gimmecomments.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.rohits1402.gimmecomments.model.Website;
+import io.github.rohits1402.gimmecomments.model.jpa.Website;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
@@ -19,6 +19,14 @@ public record WebsiteResponse(
         @JsonProperty("created_at") Instant createdAt
 ) {
     public static WebsiteResponse from(Website w) {
-        return new WebsiteResponse(w.getId(), w.getUserId(), w.getWebsiteName(), w.getWebsiteDescription(), w.getWebsiteUrl(), w.getWebsiteConfiguration(), w.getCreatedAt());
+        return new WebsiteResponse(
+                w.getId().toString(),
+                w.getOwner().getId().toString(),
+                w.getName(),
+                w.getDescription(),
+                w.getUrl(),
+                w.getWebsiteConfiguration(),
+                w.getCreatedAt()
+        );
     }
 }

@@ -3,7 +3,7 @@ package io.github.rohits1402.gimmecomments.controller;
 import io.github.rohits1402.gimmecomments.dto.CreateWebsiteRequest;
 import io.github.rohits1402.gimmecomments.dto.UpdateWebsiteRequest;
 import io.github.rohits1402.gimmecomments.dto.WebsiteResponse;
-import io.github.rohits1402.gimmecomments.model.Website;
+import io.github.rohits1402.gimmecomments.model.jpa.Website;
 import io.github.rohits1402.gimmecomments.service.WebsiteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
