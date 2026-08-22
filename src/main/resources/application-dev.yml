@@ -8,6 +8,17 @@ spring:
     multipart:
       max-file-size: 5MB
       max-request-size: 5MB
+  datasource:
+    url: jdbc:postgresql://localhost:5433/gimmecomments_dev
+    username: gimmecomments
+    password: devpassword
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
 app:
   jwt:
     secret: zNoIfzyml/mMZ+G7EVofxjRshqp0W+4+gV9dw3BBPuo=
@@ -17,6 +28,7 @@ app:
 logging:
   level:
     io.github.rohits1402.gimmecomments: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
 management:
   endpoint:
     health:

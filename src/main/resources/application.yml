@@ -8,6 +8,8 @@ spring:
     multipart:
       max-file-size: 5MB
       max-request-size: 5MB
+  jpa:
+    open-in-view: false
 app:
   jwt:
     expiration-ms: 2592000000

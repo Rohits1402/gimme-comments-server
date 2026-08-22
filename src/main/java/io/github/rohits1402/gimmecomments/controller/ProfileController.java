@@ -3,7 +3,7 @@ package io.github.rohits1402.gimmecomments.controller;
 import io.github.rohits1402.gimmecomments.dto.UpdatePasswordRequest;
 import io.github.rohits1402.gimmecomments.dto.UpdateProfileRequest;
 import io.github.rohits1402.gimmecomments.dto.UserResponse;
-import io.github.rohits1402.gimmecomments.model.User;
+import io.github.rohits1402.gimmecomments.model.jpa.User;
 import io.github.rohits1402.gimmecomments.service.UserService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;

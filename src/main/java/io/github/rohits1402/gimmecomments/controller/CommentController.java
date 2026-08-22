@@ -4,9 +4,9 @@ import io.github.rohits1402.gimmecomments.dto.CommentResponse;
 import io.github.rohits1402.gimmecomments.dto.CreateCommentRequest;
 import io.github.rohits1402.gimmecomments.dto.LikeResponse;
 import io.github.rohits1402.gimmecomments.dto.UpdateCommentRequest;
-import io.github.rohits1402.gimmecomments.model.Comment;
-import io.github.rohits1402.gimmecomments.model.Like;
-import io.github.rohits1402.gimmecomments.model.User;
+import io.github.rohits1402.gimmecomments.model.jpa.Comment;
+import io.github.rohits1402.gimmecomments.model.jpa.CommentLike;
+import io.github.rohits1402.gimmecomments.model.jpa.User;
 import io.github.rohits1402.gimmecomments.service.CommentService;
 import io.github.rohits1402.gimmecomments.service.LikeService;
 import io.github.rohits1402.gimmecomments.service.UserService;
@@ -53,15 +53,11 @@ public class CommentController {
 
     @GetMapping("/comment/{websiteId}")
     public CommentListEnvelope getAll(@PathVariable String websiteId) {
-        List<Comment> comments = commentService.getAllForWebsite(websiteId);
-
-        List<String> authorIds = comments.stream().map(Comment::getUserId).distinct().toList();
-        Map<String, User> authors = userService.getAllByIds(authorIds);
-
-        List<CommentResponse> list = comments.stream()
-                .map(comment -> CommentResponse.from(comment, authors.get(comment.getUserId())))
+        List<CommentResponse> list = commentService.getAllForWebsite(websiteId).stream()
+                .map(comment -> CommentResponse.from(comment, comment.getAuthor()))
                 .toList();
         return new CommentListEnvelope(list);
+
     }
 
     @PostMapping("/comment/{websiteId}")
@@ -77,13 +73,13 @@ public class CommentController {
     public CommentMsgEnvelope update(@AuthenticationPrincipal String userId, @PathVariable String commentId,
                                      @Valid @RequestBody UpdateCommentRequest request) {
         Comment updated = commentService.update(userId, commentId, request.commentDescription());
-        return new CommentMsgEnvelope("Comment updated successfully",CommentResponse.from(updated, userService.getById(userId)));
+        return new CommentMsgEnvelope("Comment updated successfully", CommentResponse.from(updated, userService.getById(userId)));
     }
 
     @PostMapping("/like/{commentId}")
     @ResponseStatus(HttpStatus.CREATED)
     public LikeEnvelope createLike(@AuthenticationPrincipal String userId, @PathVariable String commentId) {
-        Like created = likeService.create(userId, commentId);
+        CommentLike created = likeService.create(userId, commentId);
         return new LikeEnvelope(LikeResponse.from(created));
     }
 

@@ -2,11 +2,10 @@ package io.github.rohits1402.gimmecomments.service;
 
 import io.github.rohits1402.gimmecomments.exception.BadRequestException;
 import io.github.rohits1402.gimmecomments.model.OtpPurpose;
-import io.github.rohits1402.gimmecomments.model.OtpToken;
-import io.github.rohits1402.gimmecomments.repository.OtpTokenRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.rohits1402.gimmecomments.model.jpa.OtpToken;
+import io.github.rohits1402.gimmecomments.repository.jpa.OtpTokenJpaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -14,20 +13,25 @@ import java.time.Instant;
 
 @Service
 public class OtpService {
-    private static final Logger log = LoggerFactory.getLogger(OtpService.class);
+
     private static final Duration OTP_VALIDITY = Duration.ofMinutes(10);
-    private final OtpTokenRepository otpTokens;
+
+    private final OtpTokenJpaRepository otpTokens;
     private final SecureRandom random = new SecureRandom();
     private final EmailService emailService;
 
-    public OtpService(OtpTokenRepository otpTokens, EmailService emailService) {
+    public OtpService(OtpTokenJpaRepository otpTokens, EmailService emailService) {
         this.otpTokens = otpTokens;
         this.emailService = emailService;
     }
 
+    @Transactional
     public String generate(String email, OtpPurpose purpose) {
-        otpTokens.deleteByEmailAndPurpose(email, purpose);
+        otpTokens.deleteByExpiresAtBefore(Instant.now());     // housekeeping, replaces the TTL index
+        otpTokens.deleteByEmailAndPurpose(email, purpose);    // one live code per email and purpose
+
         String code = String.format("%06d", random.nextInt(1_000_000));
+
         OtpToken otpToken = new OtpToken();
         otpToken.setEmail(email);
         otpToken.setPurpose(purpose);
@@ -38,7 +42,6 @@ public class OtpService {
         emailService.sendOtp(email, code, purpose);
         return code;
     }
-
 
     public void verify(String email, String code, OtpPurpose purpose) {
         OtpToken token = otpTokens.findByEmailAndPurpose(email, purpose)
@@ -51,8 +54,9 @@ public class OtpService {
         }
     }
 
+    @Transactional
     public void verifyAndConsume(String email, String code, OtpPurpose purpose) {
         verify(email, code, purpose);
-        otpTokens.deleteByEmailAndPurpose(email, purpose);          // single-use
+        otpTokens.deleteByEmailAndPurpose(email, purpose);
     }
 }
