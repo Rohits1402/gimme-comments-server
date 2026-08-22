@@ -43,14 +43,6 @@ public class UserService {
         }
     }
 
-    private static UUID toUuidOrNull(String id) {
-        try {
-            return UUID.fromString(id);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
-
     // ---- accounts ------------------------------------------------------
 
     @Transactional
@@ -94,17 +86,6 @@ public class UserService {
     public User getById(String id) {
         return users.findById(toUuid(id))
                 .orElseThrow(() -> new NotFoundException("User not found"));
-    }
-
-    public Map<String, User> getAllByIds(Collection<String> ids) {
-        List<UUID> uuids = ids.stream()
-                .map(UserService::toUuidOrNull)
-                .filter(Objects::nonNull)
-                .toList();
-
-        Map<String, User> byId = new HashMap<>();
-        users.findAllById(uuids).forEach(user -> byId.put(user.getId().toString(), user));
-        return byId;
     }
 
     // ---- OTP flows -----------------------------------------------------
