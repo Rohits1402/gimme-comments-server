@@ -16,10 +16,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -110,4 +110,31 @@ class WebsiteControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.msg").value("Website with given id not found"));
     }
+
+    @Test
+    void websiteResponse_putsEveryFieldInTheRightPlace() throws Exception {
+        User owner = new User();
+        owner.setId(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+
+        Website site = new Website();
+        site.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+        site.setOwner(owner);
+        site.setName("A Name");
+        site.setDescription("A Description");
+        site.setUrl("https://a-url.example.com");
+        site.setWebsiteConfiguration(Map.of("theme", "dark"));
+
+        when(websiteService.getAllByUser(anyString())).thenReturn(List.of(site));
+
+        mockMvc.perform(get("/api/v1/websites")
+                        .with(authentication(callerIs("22222222-2222-2222-2222-222222222222"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.websites[0].id").value("11111111-1111-1111-1111-111111111111"))
+                .andExpect(jsonPath("$.websites[0].by_user").value("22222222-2222-2222-2222-222222222222"))
+                .andExpect(jsonPath("$.websites[0].website_name").value("A Name"))
+                .andExpect(jsonPath("$.websites[0].website_description").value("A Description"))
+                .andExpect(jsonPath("$.websites[0].website_url").value("https://a-url.example.com"))
+                .andExpect(jsonPath("$.websites[0].website_configuration.theme").value("dark"));
+    }
+
 }
