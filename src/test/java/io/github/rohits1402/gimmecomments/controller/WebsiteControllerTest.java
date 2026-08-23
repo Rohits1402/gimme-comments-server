@@ -2,7 +2,8 @@ package io.github.rohits1402.gimmecomments.controller;
 
 import io.github.rohits1402.gimmecomments.config.SecurityConfig;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
-import io.github.rohits1402.gimmecomments.model.Website;
+import io.github.rohits1402.gimmecomments.model.jpa.User;
+import io.github.rohits1402.gimmecomments.model.jpa.Website;
 import io.github.rohits1402.gimmecomments.service.JwtService;
 import io.github.rohits1402.gimmecomments.service.WebsiteService;
 import org.junit.jupiter.api.Test;
@@ -15,9 +16,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -51,32 +53,38 @@ class WebsiteControllerTest {
 
     @Test
     void listWebsites_returns200_withSnakeCaseEnvelope() throws Exception {
+        User owner = new User();
+        owner.setId(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+
         Website site = new Website();
-        site.setId("site1");
-        site.setUserId("user123");
-        site.setWebsiteName("My Blog");
-        site.setWebsiteUrl("https://blog.example.com");
+        site.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+        site.setOwner(owner);
+        site.setName("My Blog");
+        site.setUrl("https://blog.example.com");
 
         when(websiteService.getAllByUser("user123")).thenReturn(List.of(site));
 
         mockMvc.perform(get("/api/v1/websites").with(authentication(callerIs("user123"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.websites").isArray())
-                .andExpect(jsonPath("$.websites[0].by_user").value("user123"))
+                .andExpect(jsonPath("$.websites[0].by_user").value("22222222-2222-2222-2222-222222222222"))
                 .andExpect(jsonPath("$.websites[0].website_name").value("My Blog"));
     }
 
     @Test
     void createWebsite_takesIdentityFromTheToken_notTheRequestBody() throws Exception {
-        Website created = new Website();
-        created.setId("site1");
-        created.setUserId("user123");
-        created.setWebsiteName("My Blog");
+        User creator = new User();
+        creator.setId(UUID.fromString("22222222-2222-2222-2222-222222222222"));
 
-        when(websiteService.create(eq("user123"), any(), any(), any(), any())).thenReturn(created);
+        Website created = new Website();
+        created.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+        created.setOwner(creator);
+        created.setName("My Blog");
+
+        when(websiteService.create(eq("22222222-2222-2222-2222-222222222222"), any(), any(), any(), any())).thenReturn(created);
 
         mockMvc.perform(post("/api/v1/websites")
-                        .with(authentication(callerIs("user123")))
+                        .with(authentication(callerIs("22222222-2222-2222-2222-222222222222")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -88,9 +96,9 @@ class WebsiteControllerTest {
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.msg").value("Website created successfully"))
-                .andExpect(jsonPath("$.website.by_user").value("user123"));
+                .andExpect(jsonPath("$.website.by_user").value("22222222-2222-2222-2222-222222222222"));
 
-        verify(websiteService).create(eq("user123"), eq("My Blog"), any(), any(), any());
+        verify(websiteService).create(eq("22222222-2222-2222-2222-222222222222"), eq("My Blog"), any(), any(), any());
     }
 
     @Test
@@ -102,4 +110,31 @@ class WebsiteControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.msg").value("Website with given id not found"));
     }
+
+    @Test
+    void websiteResponse_putsEveryFieldInTheRightPlace() throws Exception {
+        User owner = new User();
+        owner.setId(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+
+        Website site = new Website();
+        site.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+        site.setOwner(owner);
+        site.setName("A Name");
+        site.setDescription("A Description");
+        site.setUrl("https://a-url.example.com");
+        site.setWebsiteConfiguration(Map.of("theme", "dark"));
+
+        when(websiteService.getAllByUser(anyString())).thenReturn(List.of(site));
+
+        mockMvc.perform(get("/api/v1/websites")
+                        .with(authentication(callerIs("22222222-2222-2222-2222-222222222222"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.websites[0].id").value("11111111-1111-1111-1111-111111111111"))
+                .andExpect(jsonPath("$.websites[0].by_user").value("22222222-2222-2222-2222-222222222222"))
+                .andExpect(jsonPath("$.websites[0].website_name").value("A Name"))
+                .andExpect(jsonPath("$.websites[0].website_description").value("A Description"))
+                .andExpect(jsonPath("$.websites[0].website_url").value("https://a-url.example.com"))
+                .andExpect(jsonPath("$.websites[0].website_configuration.theme").value("dark"));
+    }
+
 }

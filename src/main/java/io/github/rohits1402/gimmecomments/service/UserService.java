@@ -1,45 +1,51 @@
 package io.github.rohits1402.gimmecomments.service;
 
 import io.github.rohits1402.gimmecomments.exception.*;
-import io.github.rohits1402.gimmecomments.model.*;
-import io.github.rohits1402.gimmecomments.repository.CommentRepository;
-import io.github.rohits1402.gimmecomments.repository.LikeRepository;
-import io.github.rohits1402.gimmecomments.repository.UserRepository;
-import io.github.rohits1402.gimmecomments.repository.WebsiteRepository;
+import io.github.rohits1402.gimmecomments.model.Gender;
+import io.github.rohits1402.gimmecomments.model.OtpPurpose;
+import io.github.rohits1402.gimmecomments.model.jpa.User;
+import io.github.rohits1402.gimmecomments.repository.jpa.UserJpaRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class UserService {
-    private final UserRepository users;
-    private final LikeRepository likes;
-    private final CommentRepository comments;
-    private final WebsiteRepository websites;
-    private final WebsiteService websiteService;
-    private final CommentService commentService;
+
+    private final UserJpaRepository users;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
     private final FileStorageService fileStorageService;
 
-    public UserService(UserRepository users, LikeRepository likes, CommentRepository comments, WebsiteRepository websites, WebsiteService websiteService, CommentService commentService, JwtService jwtService, PasswordEncoder passwordEncoder, OtpService otpService, FileStorageService fileStorageService) {
+    public UserService(UserJpaRepository users,
+                       JwtService jwtService,
+                       PasswordEncoder passwordEncoder,
+                       OtpService otpService,
+                       FileStorageService fileStorageService) {
         this.users = users;
-        this.likes = likes;
-        this.comments = comments;
-        this.websites = websites;
-        this.websiteService = websiteService;
-        this.commentService = commentService;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.otpService = otpService;
         this.fileStorageService = fileStorageService;
     }
 
+    // ---- the one place where a String id becomes a UUID ----------------
+
+    private static UUID toUuid(String id) {
+        try {
+            return UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            throw new NotFoundException("User not found");
+        }
+    }
+
+    // ---- accounts ------------------------------------------------------
+
+    @Transactional
     public User register(String name, String email, String password) {
         if (users.existsByEmail(email)) {
             throw new ConflictException("Email already registered");
@@ -52,43 +58,37 @@ public class UserService {
     }
 
     public String login(String email, String password) {
-        User user = users.findByEmail(email).orElseThrow(() -> new UnauthenticatedException("Invalid credentials"));
+        User user = users.findByEmail(email)
+                .orElseThrow(() -> new UnauthenticatedException("Invalid credentials"));
+
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new UnauthenticatedException("Invalid Credentials");
         }
-        if (!user.isEmailVerified())
+        if (!user.isEmailVerified()) {
             throw new ForbiddenException("Email is not verified");
-
-        if (!user.isAccountActive())
+        }
+        if (!user.isAccountActive()) {
             throw new ForbiddenException("Account is deactivated (Contact administrator)");
+        }
 
-        return jwtService.generateToken(user.getId());
+        return jwtService.generateToken(user.getId().toString());
     }
 
+    @Transactional
     public void deleteUser(String userId) {
-        if (!users.existsById(userId)) {
+        UUID id = toUuid(userId);
+        if (!users.existsById(id)) {
             throw new NotFoundException("User not found");
         }
-        likes.deleteByUserId(userId);                              // 1. likes they gave
-        for (Website site : websites.findByUserId(userId)) {
-            websiteService.purgeWebsite(site.getId());             // 2. their websites + all contents
-        }
-        for (Comment comment : comments.findByUserId(userId)) {
-            commentService.deleteCommentTree(comment.getId());     // 3. their comments elsewhere (may
-        }                                                          //    already be gone — idempotent)
-        users.deleteById(userId);                                  // 4. the user record, LAST
+        users.deleteById(id);          // websites, comments and likes cascade in the database
     }
 
     public User getById(String id) {
-        return users.findById(id)
+        return users.findById(toUuid(id))
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
-    public Map<String, User> getAllByIds(Collection<String> ids) {
-        Map<String, User> byId = new HashMap<>();
-        users.findAllById(ids).forEach(user -> byId.put(user.getId(), user));
-        return byId;
-    }
+    // ---- OTP flows -----------------------------------------------------
 
     public void sendVerificationOtp(String email) {
         users.findByEmail(email).ifPresent(user -> {
@@ -98,72 +98,67 @@ public class UserService {
         });
     }
 
+    @Transactional
     public void verifyAccount(String email, String otp) {
-        User user = users.findByEmail(email).orElseThrow(() -> new BadRequestException("OTP is invalid"));
+        User user = users.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("OTP is invalid"));
         otpService.verifyAndConsume(email, otp, OtpPurpose.ACCOUNT_VERIFICATION);
         user.setEmailVerified(true);
-        users.save(user);
     }
 
     public void sendPasswordResetOtp(String email) {
-        users.findByEmail(email).ifPresent(user -> {
-            otpService.generate(email, OtpPurpose.PASSWORD_RESET);
-        });
+        users.findByEmail(email)
+                .ifPresent(user -> otpService.generate(email, OtpPurpose.PASSWORD_RESET));
     }
 
     public void verifyResetOtp(String email, String otp) {
         otpService.verify(email, otp, OtpPurpose.PASSWORD_RESET);
     }
 
+    @Transactional
     public void resetPassword(String email, String otp, String newPassword) {
         User user = users.findByEmail(email)
                 .orElseThrow(() -> new BadRequestException("OTP is invalid"));
         otpService.verifyAndConsume(email, otp, OtpPurpose.PASSWORD_RESET);
         user.setPassword(passwordEncoder.encode(newPassword));
-        users.save(user);
     }
 
+    // ---- profile -------------------------------------------------------
+
+    @Transactional
     public User updateProfileImage(String userId, MultipartFile file) {
         User user = getById(userId);
         String oldUrl = user.getProfileImage();
-        String newUrl = fileStorageService.store(file);
-        user.setProfileImage(newUrl);
-        User saved = users.save(user);
+        user.setProfileImage(fileStorageService.store(file));
         fileStorageService.delete(oldUrl);
-        return saved;
+        return user;
     }
 
+    @Transactional
     public User updateProfile(String userId, String name, Gender gender, String birthday) {
-        if ((name == null || name.isEmpty()) && gender == null && (birthday == null || birthday.isEmpty()))
+        if ((name == null || name.isEmpty()) && gender == null && (birthday == null || birthday.isEmpty())) {
             throw new BadRequestException("Please provide fields to update");
+        }
 
         User user = getById(userId);
-        if (name != null && !name.isEmpty())
-            user.setName(name);
-
-        if (gender != null)
-            user.setGender(gender);
-
-        if (birthday != null && !birthday.isEmpty())
-            user.setBirthday(birthday);
-
-        return users.save(user);
-
+        if (name != null && !name.isEmpty()) user.setName(name);
+        if (gender != null) user.setGender(gender);
+        if (birthday != null && !birthday.isEmpty()) user.setBirthday(birthday);
+        return user;
     }
 
+    @Transactional
     public User updatePassword(String userId, String oldPassword, String newPassword) {
         User user = getById(userId);
-
-
-        if (!passwordEncoder.matches(oldPassword, user.getPassword()))
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new BadRequestException("Wrong Old Password");
-
+        }
         user.setPassword(passwordEncoder.encode(newPassword));
-        return users.save(user);
+        return user;
     }
 
+    @Transactional
     public void deleteProfile(String userId) {
         deleteUser(userId);
     }
-
 }

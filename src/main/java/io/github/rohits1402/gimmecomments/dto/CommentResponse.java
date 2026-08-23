@@ -1,8 +1,8 @@
 package io.github.rohits1402.gimmecomments.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.rohits1402.gimmecomments.model.Comment;
-import io.github.rohits1402.gimmecomments.model.User;
+import io.github.rohits1402.gimmecomments.model.jpa.Comment;
+import io.github.rohits1402.gimmecomments.model.jpa.User;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
@@ -19,10 +19,10 @@ public record CommentResponse(
 ) {
     public static CommentResponse from(Comment c, User author) {
         return new CommentResponse(
-                c.getId(),
+                c.getId().toString(),
                 AuthorResponse.from(author),
-                c.getWebsiteId(),
-                c.getParentCommentId(),
+                c.getWebsite().getId().toString(),
+                c.getParent() == null ? null : c.getParent().getId().toString(),
                 c.getCommentDescription(),
                 c.getCreatedAt());
     }
