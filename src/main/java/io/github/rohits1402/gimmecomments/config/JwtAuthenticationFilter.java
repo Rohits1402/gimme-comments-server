@@ -13,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -32,10 +33,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
             try {
                 String userId = jwtService.extractUserId(token);
+                UUID.fromString(userId);   // ids are UUIDs since the PostgreSQL move; anything else is a token from the old system
                 var authentication = new UsernamePasswordAuthenticationToken(userId, null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-            } catch (JwtException e) {
-                // invalid token: proceed unauthenticated
+            } catch (JwtException | IllegalArgumentException e) {
+                // invalid or outdated token: proceed unauthenticated
             }
         }
         filterChain.doFilter(request, response);   // ALWAYS — the filter's job is to decorate, never to decide
