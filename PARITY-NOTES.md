@@ -23,6 +23,7 @@
 | 13 | OTP generate-otp response | returned "OTP send to email" only if the email existed; unknown email threw "User does not exist" | always returns the same generic "If an account exists, an OTP has been sent"; no OTP created for unknown emails | User-enumeration defense, consistent with deviation #9. Verify/reset return "OTP is invalid" for unknown email too, indistinguishable from a wrong code. |
 | 14 | `create_comment` on a non-existent website | old code validated the parent comment but never the website — a comment could be attached to a website id referring to nothing, creating orphan data | `CommentService.create` calls `websiteService.requireExists(websiteId)` first; an unknown website returns **404 "Website with given id not found"** | Same defect as deviation #10, one level up. MongoDB has no foreign keys, so referential integrity is the application's job and nothing else is checking. Reads stay permissive — `GET` on an unknown website still returns an empty list, because that is a truthful answer and the widget calls it on every page load. Added Day 26. |
 | 15 | `DELETE /auth/profile/delete-profile` | deleted every comment the user had ever written, plus every reply beneath them | the comments stay; the author becomes empty and renders as "Deleted user" | PostgreSQL uses `ON DELETE SET NULL` on `comments.user_id`. Deleting your account should remove your account, not punch holes in threads other people are reading — which is what every large site does. `AuthorResponse.from(null)` was written on Day 36 and had been waiting for exactly this. Changed during the MongoDB to PostgreSQL migration, Day 43. |
+| 16 | `GET /comments/comment/{websiteId}` comment fields | each comment was `comm.toJSON()` on the raw Mongoose document, so it carried `_id` and `createdAt` (Mongoose timestamps are camelCase), plus the fully populated `by_user` | `CommentResponse` returns `id`, `created_at`, and a `by_user` trimmed to `id`/`name`/`profile_image` | Follows from deviation #8. Once the response is a DTO instead of a raw document, the Mongoose field names go with it, and `email` is gone deliberately because this endpoint is public. **Consequence found on Day 47:** the bundled 2023 React widget still reads `_id`, `createdAt` and `by_user.email`, so the demo page renders "undefined | Invalid Date". The widget source lives in `legacy-mern/client` and can be rebuilt; adding `email` back is not an option. |
 
 ## Endpoint coverage (audited Day 25)
 
@@ -51,6 +52,12 @@ Every route in the original Express server exists in the Spring Boot port:
 | `GET /api/v1/initialization` (+ static widget at `/build/**`, `/initialize-gimme-comments.js`) | ✅ |
 
 Scaffolding removed at this checkpoint: `HelloController` (Day 4 teaching endpoints) and `UserController` (`/api/v1/users/me`, the Day 17 JWT test endpoint, superseded by `GET /auth/profile`).
+
+## Known gaps (found Day 47, not yet ported)
+
+- **`liked_by` and `i_liked` are missing from the comment list.** The old `get_all_comments` ran a `$group` aggregation over the Like collection to attach a like count to every comment, and read the `Authorization` header *optionally* so that anonymous readers still saw counts while a logged-in reader also got `i_liked`. This API can create and delete a like but offers no way to read one, so the widget renders `undefined Like` on every comment.
+
+  The Day 25 endpoint audit missed this because it compared **endpoints**, and both like endpoints exist. The gap is inside a response body belonging to a different endpoint. That is the same blind spot that hid the camelCase user fields until Day 28 — an audit only finds what it thinks to look at.
 
 ## Faithful shapes (we reproduce these exactly, on purpose)
 
