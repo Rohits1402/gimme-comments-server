@@ -3,14 +3,15 @@ package io.github.rohits1402.gimmecomments.service;
 import io.github.rohits1402.gimmecomments.exception.BadRequestException;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
 import io.github.rohits1402.gimmecomments.model.Comment;
-import io.github.rohits1402.gimmecomments.repository.CommentRepository;
-import io.github.rohits1402.gimmecomments.repository.UserRepository;
-import io.github.rohits1402.gimmecomments.repository.WebsiteRepository;
+import io.github.rohits1402.gimmecomments.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class CommentService {
@@ -19,15 +20,17 @@ public class CommentService {
     private final UserRepository users;
     private final WebsiteRepository websites;
     private final WebsiteService websiteService;
+    private final CommentLikeRepository likes;
 
     public CommentService(CommentRepository comments,
                           UserRepository users,
                           WebsiteRepository websites,
-                          WebsiteService websiteService) {
+                          WebsiteService websiteService, CommentLikeRepository likes) {
         this.comments = comments;
         this.users = users;
         this.websites = websites;
         this.websiteService = websiteService;
+        this.likes = likes;
     }
 
     private static UUID toUuid(String id) {
@@ -79,9 +82,33 @@ public class CommentService {
                 .orElseThrow(() -> new NotFoundException("Comment not found"));
     }
 
-    public List<Comment> getAllForWebsite(String websiteId) {
+    @Transactional(readOnly = true)
+    public List<CommentWithLikes> getAllForWebsite(String websiteId, String callerUserId) {
         UUID id = toUuidOrNull(websiteId);
-        return id == null ? List.of() : comments.findByWebsiteIdWithAuthors(id);
+        if (id == null) {
+            return List.of();
+        }
+
+        List<Comment> found = comments.findByWebsiteIdWithAuthors(id);
+        if (found.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> commentIds = found.stream().map(Comment::getId).toList();
+
+        Map<UUID, Long> counts = likes.countByCommentIds(commentIds).stream()
+                .collect(Collectors.toMap(LikeCount::commentId, LikeCount::total));
+
+        UUID callerId = callerUserId == null ? null : toUuidOrNull(callerUserId);
+        Set<UUID> mine = callerId == null
+                ? Set.of()
+                : Set.copyOf(likes.findLikedCommentIds(callerId, commentIds));
+
+        return found.stream()
+                .map(c -> new CommentWithLikes(c,
+                        counts.getOrDefault(c.getId(), 0L),
+                        mine.contains(c.getId())))
+                .toList();
     }
 
     @Transactional
