@@ -1,7 +1,7 @@
 package io.github.rohits1402.gimmecomments.controller;
 
 import io.github.rohits1402.gimmecomments.dto.*;
-import io.github.rohits1402.gimmecomments.model.jpa.User;
+import io.github.rohits1402.gimmecomments.model.User;
 import io.github.rohits1402.gimmecomments.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

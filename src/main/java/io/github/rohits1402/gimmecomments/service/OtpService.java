@@ -2,8 +2,8 @@ package io.github.rohits1402.gimmecomments.service;
 
 import io.github.rohits1402.gimmecomments.exception.BadRequestException;
 import io.github.rohits1402.gimmecomments.model.OtpPurpose;
-import io.github.rohits1402.gimmecomments.model.jpa.OtpToken;
-import io.github.rohits1402.gimmecomments.repository.jpa.OtpTokenJpaRepository;
+import io.github.rohits1402.gimmecomments.model.OtpToken;
+import io.github.rohits1402.gimmecomments.repository.OtpTokenRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,11 +16,11 @@ public class OtpService {
 
     private static final Duration OTP_VALIDITY = Duration.ofMinutes(10);
 
-    private final OtpTokenJpaRepository otpTokens;
+    private final OtpTokenRepository otpTokens;
     private final SecureRandom random = new SecureRandom();
     private final EmailService emailService;
 
-    public OtpService(OtpTokenJpaRepository otpTokens, EmailService emailService) {
+    public OtpService(OtpTokenRepository otpTokens, EmailService emailService) {
         this.otpTokens = otpTokens;
         this.emailService = emailService;
     }

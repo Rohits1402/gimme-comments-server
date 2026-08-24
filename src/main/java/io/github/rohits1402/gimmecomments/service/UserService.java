@@ -3,8 +3,8 @@ package io.github.rohits1402.gimmecomments.service;
 import io.github.rohits1402.gimmecomments.exception.*;
 import io.github.rohits1402.gimmecomments.model.Gender;
 import io.github.rohits1402.gimmecomments.model.OtpPurpose;
-import io.github.rohits1402.gimmecomments.model.jpa.User;
-import io.github.rohits1402.gimmecomments.repository.jpa.UserJpaRepository;
+import io.github.rohits1402.gimmecomments.model.User;
+import io.github.rohits1402.gimmecomments.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,13 +15,13 @@ import java.util.*;
 @Service
 public class UserService {
 
-    private final UserJpaRepository users;
+    private final UserRepository users;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
     private final FileStorageService fileStorageService;
 
-    public UserService(UserJpaRepository users,
+    public UserService(UserRepository users,
                        JwtService jwtService,
                        PasswordEncoder passwordEncoder,
                        OtpService otpService,

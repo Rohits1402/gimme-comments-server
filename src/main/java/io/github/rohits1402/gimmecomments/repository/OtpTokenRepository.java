@@ -1,7 +1,7 @@
-package io.github.rohits1402.gimmecomments.repository.jpa;
+package io.github.rohits1402.gimmecomments.repository;
 
 import io.github.rohits1402.gimmecomments.model.OtpPurpose;
-import io.github.rohits1402.gimmecomments.model.jpa.OtpToken;
+import io.github.rohits1402.gimmecomments.model.OtpToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.Instant;
@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 
-public interface OtpTokenJpaRepository extends JpaRepository<OtpToken, UUID> {
+public interface OtpTokenRepository extends JpaRepository<OtpToken, UUID> {
 
     Optional<OtpToken> findByEmailAndPurpose(String email, OtpPurpose purpose);
 

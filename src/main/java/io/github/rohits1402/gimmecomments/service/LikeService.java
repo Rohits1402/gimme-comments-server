@@ -2,10 +2,10 @@ package io.github.rohits1402.gimmecomments.service;
 
 import io.github.rohits1402.gimmecomments.exception.BadRequestException;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
-import io.github.rohits1402.gimmecomments.model.jpa.CommentLike;
-import io.github.rohits1402.gimmecomments.repository.jpa.CommentJpaRepository;
-import io.github.rohits1402.gimmecomments.repository.jpa.CommentLikeJpaRepository;
-import io.github.rohits1402.gimmecomments.repository.jpa.UserJpaRepository;
+import io.github.rohits1402.gimmecomments.model.CommentLike;
+import io.github.rohits1402.gimmecomments.repository.CommentRepository;
+import io.github.rohits1402.gimmecomments.repository.CommentLikeRepository;
+import io.github.rohits1402.gimmecomments.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,13 +14,13 @@ import java.util.UUID;
 @Service
 public class LikeService {
 
-    private final CommentLikeJpaRepository likes;
-    private final CommentJpaRepository comments;
-    private final UserJpaRepository users;
+    private final CommentLikeRepository likes;
+    private final CommentRepository comments;
+    private final UserRepository users;
 
-    public LikeService(CommentLikeJpaRepository likes,
-                       CommentJpaRepository comments,
-                       UserJpaRepository users) {
+    public LikeService(CommentLikeRepository likes,
+                       CommentRepository comments,
+                       UserRepository users) {
         this.likes = likes;
         this.comments = comments;
         this.users = users;

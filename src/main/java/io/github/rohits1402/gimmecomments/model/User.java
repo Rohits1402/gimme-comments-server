@@ -1,6 +1,5 @@
-package io.github.rohits1402.gimmecomments.model.jpa;
+package io.github.rohits1402.gimmecomments.model;
 
-import io.github.rohits1402.gimmecomments.model.Gender;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

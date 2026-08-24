@@ -2,7 +2,7 @@ package io.github.rohits1402.gimmecomments.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.rohits1402.gimmecomments.model.Gender;
-import io.github.rohits1402.gimmecomments.model.jpa.User;
+import io.github.rohits1402.gimmecomments.model.User;
 
 
 public record UserResponse(

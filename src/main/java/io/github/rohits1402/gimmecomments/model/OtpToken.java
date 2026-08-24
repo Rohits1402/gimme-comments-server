@@ -1,4 +1,4 @@
-package io.github.rohits1402.gimmecomments.model.jpa;
+package io.github.rohits1402.gimmecomments.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -12,20 +12,26 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "likes")
 @Entity
-public class CommentLike {
+@Table(name = "otp_tokens")
+public class OtpToken {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "comment_id", nullable = false)
-    private Comment comment;
+    @Column(nullable = false, length = 255)
+    private String email;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(nullable = false, length = 10)
+    private String code;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private OtpPurpose purpose;
+
+    @Column(name = "expires_at", nullable = false)
+    private Instant expiresAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
