@@ -53,12 +53,6 @@ Every route in the original Express server exists in the Spring Boot port:
 
 Scaffolding removed at this checkpoint: `HelloController` (Day 4 teaching endpoints) and `UserController` (`/api/v1/users/me`, the Day 17 JWT test endpoint, superseded by `GET /auth/profile`).
 
-## Known gaps (not yet ported)
-
-- **`liked_by` and `i_liked` are missing from the comment list** (found Day 47). The old `get_all_comments` ran a `$group` aggregation over the Like collection to attach a like count to every comment, and read the `Authorization` header *optionally* so that anonymous readers still saw counts while a logged-in reader also got `i_liked`. This API can create and delete a like but offers no way to read one, so the widget renders `undefined Like` on every comment.
-
-  The Day 25 endpoint audit missed this because it compared **endpoints**, and both like endpoints exist. The gap is inside a response body belonging to a different endpoint. That is the same blind spot that hid the camelCase user fields until Day 28 — an audit only finds what it thinks to look at.
-
 ## Faithful shapes (we reproduce these exactly, on purpose)
 
 - **Response envelopes:** `{websites:[...]}`, `{website:{...}}`, `{msg, website}`, `{comments:[...]}`, `{msg, comment}`, `{msg}`.
@@ -84,3 +78,4 @@ Scaffolding removed at this checkpoint: `HelloController` (Day 4 teaching endpoi
 | `Like` had no compound unique index, so double-likes were possible | Day 18 |
 | `user_id` accepted in bodies and query params as scaffolding | Day 18 — removed from the contract entirely |
 | Comment creation did not check that the website existed | Day 26 |
+| `liked_by` and `i_liked` missing from the comment list — the old `get_all_comments` aggregated the Like collection and read the `Authorization` header *optionally*, so anonymous readers saw counts and a logged-in reader also got `i_liked`. Found Day 47; the Day 25 audit had missed it because that audit compared **endpoints**, and both like endpoints exist — the gap lived inside a *different* endpoint's response body, the same blind spot that hid the camelCase user fields until Day 28 | Day 49 — two batch queries (a grouped count, and the caller's liked ids), so the list costs three queries no matter how many comments. Create and update still send no like data, matching the old API: `liked_by` and `i_liked` are `Long`/`Boolean` and omitted when null, because zero is a claim and absent is the truth |

@@ -50,12 +50,12 @@ public class CommentController {
 
 
     @GetMapping("/comment/{websiteId}")
-    public CommentListEnvelope getAll(@PathVariable String websiteId) {
-        List<CommentResponse> list = commentService.getAllForWebsite(websiteId).stream()
-                .map(comment -> CommentResponse.from(comment, comment.getAuthor()))
+    public CommentListEnvelope getAll(@PathVariable String websiteId,
+                                      @AuthenticationPrincipal String callerUserId) {
+        List<CommentResponse> list = commentService.getAllForWebsite(websiteId, callerUserId).stream()
+                .map(c -> CommentResponse.from(c.comment(), c.comment().getAuthor(), c.likedBy(), c.iLiked()))
                 .toList();
         return new CommentListEnvelope(list);
-
     }
 
     @PostMapping("/comment/{websiteId}")
