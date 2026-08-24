@@ -1,6 +1,4 @@
 spring:
-  mongodb:
-    uri: mongodb://localhost:27017/gimmecomments_dev
   web:
     error:
       include-stacktrace: never

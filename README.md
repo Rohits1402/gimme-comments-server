@@ -8,7 +8,7 @@
 
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-brightgreen)
-![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue)
 [![CI](https://github.com/Rohits1402/gimme-comments-server/actions/workflows/ci.yml/badge.svg)](https://github.com/Rohits1402/gimme-comments-server/actions/workflows/ci.yml)
 
 ---
@@ -25,7 +25,7 @@ It is not a line-by-line translation. The port deliberately fixes a number of re
 |---|---|
 | Language / runtime | Java 21 |
 | Framework | Spring Boot 4.1.0, Spring MVC |
-| Persistence | MongoDB via Spring Data (local for dev, Atlas for prod) |
+| Persistence | PostgreSQL 17 via Spring Data JPA and Hibernate, schema owned by Flyway (Docker for dev, Neon for prod) |
 | Authentication | JWT (jjwt 0.12.6), bcrypt password hashing |
 | File storage | Local disk in dev, AWS S3 in prod — one interface, two implementations |
 | Email | Logged to console in dev, Brevo over HTTPS in prod |
@@ -35,7 +35,7 @@ It is not a line-by-line translation. The port deliberately fixes a number of re
 
 ## Quick start
 
-Requires Docker. Nothing else — no JDK, no MongoDB installation.
+Requires Docker. Nothing else — no JDK, no PostgreSQL installation.
 
 ```bash
 git clone https://github.com/Rohits1402/gimme-comments-server.git
@@ -43,11 +43,11 @@ cd gimme-comments-server
 docker compose up --build
 ```
 
-That starts the application and a MongoDB alongside it on a private network, with a named volume so the database survives being restarted. The app listens on **8080**; MongoDB is published on **27018**, deliberately not 27017, so it cannot collide with a MongoDB you already have installed.
+That starts the application and a PostgreSQL alongside it on a private network, with a named volume so the database survives being restarted. The app listens on **8080**; PostgreSQL is published on **5433**, deliberately not 5432, so it cannot collide with a PostgreSQL you already have installed. Flyway builds the schema on first start, so there is nothing to import.
 
 Then open **http://localhost:8080/swagger-ui.html** to browse and call every endpoint.
 
-**Without Docker**, you need JDK 21 and a MongoDB on `localhost:27017`:
+**Without Docker**, you need JDK 21 and a PostgreSQL 17 on `localhost:5433` holding a `gimmecomments_dev` database owned by `gimmecomments` with password `devpassword` — the same values `compose.yaml` uses:
 
 ```bash
 ./mvnw spring-boot:run
@@ -61,7 +61,9 @@ The `dev` profile needs nothing. The `prod` profile reads every secret from the 
 
 | Variable | Purpose |
 |---|---|
-| `MONGO_URI` | MongoDB Atlas connection string |
+| `SPRING_DATASOURCE_URL` | JDBC URL of the PostgreSQL database |
+| `SPRING_DATASOURCE_USERNAME` | Database user |
+| `SPRING_DATASOURCE_PASSWORD` | Database password |
 | `JWT_SECRET` | Base64 signing key for tokens |
 | `BREVO_API_KEY` | Brevo transactional email API key |
 | `MAIL_FROM` | Sender address, verified in Brevo |
@@ -98,14 +100,14 @@ flowchart LR
     W[Third-party site<br/>+ widget script] -->|CORS, no cookies| C[Controllers]
     C --> S[Services]
     S --> R[Repositories]
-    R --> M[(MongoDB)]
+    R --> M[(PostgreSQL)]
     S --> F[FileStorageService]
     F --> D[Local disk / S3]
     S --> E[EmailService]
     E --> G[Console / Brevo HTTPS API]
 ```
 
-Requests pass through a filter chain that stamps a request id into the logging context, then reads and verifies the JWT. Controllers handle HTTP and shape responses; services own the rules; repositories talk to MongoDB. Exceptions are translated to the API's `{"msg": "..."}` error format in one place.
+Requests pass through a filter chain that stamps a request id into the logging context, then reads and verifies the JWT. Controllers handle HTTP and shape responses; services own the rules; repositories talk to PostgreSQL through JPA. Exceptions are translated to the API's `{"msg": "..."}` error format in one place.
 
 `FileStorageService` and `EmailService` are interfaces with a dev and a prod implementation selected by Spring profile, so the service layer never knows whether a file went to disk or to S3.
 
@@ -124,7 +126,8 @@ config/       security, JWT filter, CORS, logging, async, S3, OpenAPI
 controller/   HTTP endpoints only
 service/      business rules
 repository/   Spring Data interfaces
-model/        MongoDB documents
+model/jpa/    JPA entities
+resources/db/migration/  Flyway migrations — append-only, never edited once applied
 dto/          request and response records — entities are never returned directly
 exception/    exception hierarchy and the global handler
 ```
