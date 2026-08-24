@@ -1,10 +1,4 @@
 services:
-  mongo:
-    image: mongo:8
-    ports:
-      - "27018:27017"
-    volumes:
-      - mongo-data:/data/db
   postgres:
     image: postgres:17
     ports:
@@ -22,14 +16,11 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_MONGODB_URI: mongodb://mongo:27017/gimmecomments_dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gimmecomments_dev
       SPRING_DATASOURCE_USERNAME: gimmecomments
       SPRING_DATASOURCE_PASSWORD: devpassword
     depends_on:
-      - mongo
       - postgres
 
 volumes:
-  mongo-data:
   postgres-data:

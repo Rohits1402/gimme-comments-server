@@ -1,9 +1,6 @@
 spring:
   application:
     name: gimme-comments-server
-  data:
-    mongodb:
-      auto-index-creation: true
   servlet:
     multipart:
       max-file-size: 5MB
@@ -18,10 +15,7 @@ management:
     health:
       group:
         readiness:
-          include: readinessState, mongo
-  health:
-    mongodb:
-      enabled: false
+          include: readinessState, db
 logging:
   level:
     io.github.rohits1402.gimmecomments: INFO

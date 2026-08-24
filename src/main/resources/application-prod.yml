@@ -2,8 +2,6 @@ server:
   port: ${PORT:8080}
 
 spring:
-  mongodb:
-    uri: ${MONGO_URI}
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
