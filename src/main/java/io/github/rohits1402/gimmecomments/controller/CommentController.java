@@ -4,9 +4,8 @@ import io.github.rohits1402.gimmecomments.dto.CommentResponse;
 import io.github.rohits1402.gimmecomments.dto.CreateCommentRequest;
 import io.github.rohits1402.gimmecomments.dto.LikeResponse;
 import io.github.rohits1402.gimmecomments.dto.UpdateCommentRequest;
-import io.github.rohits1402.gimmecomments.model.jpa.Comment;
-import io.github.rohits1402.gimmecomments.model.jpa.CommentLike;
-import io.github.rohits1402.gimmecomments.model.jpa.User;
+import io.github.rohits1402.gimmecomments.model.Comment;
+import io.github.rohits1402.gimmecomments.model.CommentLike;
 import io.github.rohits1402.gimmecomments.service.CommentService;
 import io.github.rohits1402.gimmecomments.service.LikeService;
 import io.github.rohits1402.gimmecomments.service.UserService;
@@ -16,7 +15,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/comments")

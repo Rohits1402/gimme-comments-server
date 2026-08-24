@@ -2,9 +2,9 @@ package io.github.rohits1402.gimmecomments.service;
 
 import io.github.rohits1402.gimmecomments.exception.ConflictException;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
-import io.github.rohits1402.gimmecomments.model.jpa.Website;
-import io.github.rohits1402.gimmecomments.repository.jpa.UserJpaRepository;
-import io.github.rohits1402.gimmecomments.repository.jpa.WebsiteJpaRepository;
+import io.github.rohits1402.gimmecomments.model.Website;
+import io.github.rohits1402.gimmecomments.repository.UserRepository;
+import io.github.rohits1402.gimmecomments.repository.WebsiteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,10 +15,10 @@ import java.util.UUID;
 @Service
 public class WebsiteService {
 
-    private final WebsiteJpaRepository websites;
-    private final UserJpaRepository users;
+    private final WebsiteRepository websites;
+    private final UserRepository users;
 
-    public WebsiteService(WebsiteJpaRepository websites, UserJpaRepository users) {
+    public WebsiteService(WebsiteRepository websites, UserRepository users) {
         this.websites = websites;
         this.users = users;
     }

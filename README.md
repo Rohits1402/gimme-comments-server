@@ -125,11 +125,12 @@ Controller slices using `@WebMvcTest` with mocked services, plus one full-contex
 config/       security, JWT filter, CORS, logging, async, S3, OpenAPI
 controller/   HTTP endpoints only
 service/      business rules
-repository/   Spring Data interfaces
-model/jpa/    JPA entities
-resources/db/migration/  Flyway migrations — append-only, never edited once applied
+repository/   Spring Data JPA interfaces
+model/        JPA entities and enums
 dto/          request and response records — entities are never returned directly
 exception/    exception hierarchy and the global handler
+
+src/main/resources/db/migration/   Flyway migrations — append-only, never edited once applied
 ```
 
 ## Licence

@@ -2,10 +2,10 @@ package io.github.rohits1402.gimmecomments.service;
 
 import io.github.rohits1402.gimmecomments.exception.BadRequestException;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
-import io.github.rohits1402.gimmecomments.model.jpa.Comment;
-import io.github.rohits1402.gimmecomments.repository.jpa.CommentJpaRepository;
-import io.github.rohits1402.gimmecomments.repository.jpa.UserJpaRepository;
-import io.github.rohits1402.gimmecomments.repository.jpa.WebsiteJpaRepository;
+import io.github.rohits1402.gimmecomments.model.Comment;
+import io.github.rohits1402.gimmecomments.repository.CommentRepository;
+import io.github.rohits1402.gimmecomments.repository.UserRepository;
+import io.github.rohits1402.gimmecomments.repository.WebsiteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,14 +15,14 @@ import java.util.UUID;
 @Service
 public class CommentService {
 
-    private final CommentJpaRepository comments;
-    private final UserJpaRepository users;
-    private final WebsiteJpaRepository websites;
+    private final CommentRepository comments;
+    private final UserRepository users;
+    private final WebsiteRepository websites;
     private final WebsiteService websiteService;
 
-    public CommentService(CommentJpaRepository comments,
-                          UserJpaRepository users,
-                          WebsiteJpaRepository websites,
+    public CommentService(CommentRepository comments,
+                          UserRepository users,
+                          WebsiteRepository websites,
                           WebsiteService websiteService) {
         this.comments = comments;
         this.users = users;

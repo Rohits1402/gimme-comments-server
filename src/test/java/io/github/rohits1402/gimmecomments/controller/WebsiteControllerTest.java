@@ -2,8 +2,8 @@ package io.github.rohits1402.gimmecomments.controller;
 
 import io.github.rohits1402.gimmecomments.config.SecurityConfig;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
-import io.github.rohits1402.gimmecomments.model.jpa.User;
-import io.github.rohits1402.gimmecomments.model.jpa.Website;
+import io.github.rohits1402.gimmecomments.model.User;
+import io.github.rohits1402.gimmecomments.model.Website;
 import io.github.rohits1402.gimmecomments.service.JwtService;
 import io.github.rohits1402.gimmecomments.service.WebsiteService;
 import org.junit.jupiter.api.Test;
