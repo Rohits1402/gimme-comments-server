@@ -45,9 +45,19 @@ itself served from and leaves it on `window.__GIMME_COMMENTS_API__`. `api.js` re
 that, falling back to `VITE_API_BASE` for `npm run dev`. Do not bake a URL in — the
 same bundle is served from localhost and from production.
 
-**Every style is scoped under `.gc-root`.** No global reset, no bare element
-selectors, no CSS framework. The widget renders inside someone else's page and must
-not touch it.
+**Every style is scoped under `.gc-root`** — every single one, including plain class
+selectors. No global reset, no bare element selectors, no CSS framework.
+
+This is stricter than it first appears, and getting it half right is worse than
+obvious. An early version scoped the root block but left rules like `.gc-input` and
+`.gc-btn` as bare class selectors, relying on the `--gc-*` custom properties being
+undefined outside `.gc-root` to keep them harmless. They were not harmless. The
+dashboard uses the same class names, the widget's stylesheet is injected *after* the
+page's own, and equal specificity means last one wins — so embedding the widget on
+the dashboard silently turned its inputs and buttons transparent. A host page using
+any `gc-` prefixed class would have broken the same way.
+
+Element selectors were never the real risk. Class-name collision was.
 
 **The theme comes from the host page, not the operating system.**
 `prefers-color-scheme` reports the reader's OS setting, which says nothing about the
