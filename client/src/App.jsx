@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from './api.js';
 import { StoreProvider, useStore } from './store.jsx';
 import { Avatar, Toast } from './ui.jsx';
+import { resolveTheme, safeAccent } from './theme.js';
 import Auth from './Auth.jsx';
 import Comments from './Comments.jsx';
 import Profile from './Profile.jsx';
@@ -26,7 +27,7 @@ function Header({ view, setView }) {
   );
 }
 
-function Widget({ theme }) {
+function Widget({ theme, style }) {
   const { user } = useStore();
   const [view, setView] = useState('comments');
 
@@ -36,7 +37,7 @@ function Widget({ theme }) {
   }, [user, view]);
 
   return (
-    <div className={`gc-root gc-theme-${theme}`}>
+    <div className={`gc-root gc-theme-${theme}`} style={style}>
       <Header view={view} setView={setView} />
 
       {view === 'profile' ? (
@@ -56,8 +57,16 @@ function Widget({ theme }) {
   );
 }
 
-export default function App({ websiteId, theme }) {
+export default function App({ websiteId, container }) {
   const [check, setCheck] = useState({ status: 'checking' });
+
+  // Until the server answers we do not know the site owner's saved theme, so the
+  // loading state uses the page's own appearance. It only ever moves to something
+  // more specific, never back.
+  const config = check.config ?? null;
+  const theme = resolveTheme(container, config);
+  const accent = safeAccent(config?.accent);
+  const style = accent ? { '--gc-accent': accent } : undefined;
 
   useEffect(() => {
     if (!websiteId) {
@@ -72,7 +81,9 @@ export default function App({ websiteId, theme }) {
     let cancelled = false;
     api
       .get(`/websites/exists/${websiteId}`)
-      .then(() => !cancelled && setCheck({ status: 'ok' }))
+      .then((data) =>
+        !cancelled && setCheck({ status: 'ok', config: data?.website_configuration })
+      )
       .catch((err) => {
         if (cancelled) return;
         setCheck({
@@ -91,7 +102,7 @@ export default function App({ websiteId, theme }) {
 
   if (check.status === 'checking') {
     return (
-      <div className={`gc-root gc-theme-${theme}`}>
+      <div className={`gc-root gc-theme-${theme}`} style={style}>
         <div className="gc-loading">
           <span className="gc-spinner" /> Loading comments…
         </div>
@@ -101,7 +112,7 @@ export default function App({ websiteId, theme }) {
 
   if (check.status === 'error') {
     return (
-      <div className={`gc-root gc-theme-${theme}`}>
+      <div className={`gc-root gc-theme-${theme}`} style={style}>
         <div className="gc-alert">{check.message}</div>
       </div>
     );
@@ -109,7 +120,7 @@ export default function App({ websiteId, theme }) {
 
   return (
     <StoreProvider websiteId={websiteId}>
-      <Widget theme={theme} />
+      <Widget theme={theme} style={style} />
     </StoreProvider>
   );
 }

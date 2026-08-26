@@ -49,10 +49,32 @@ public class CommentService {
         }
     }
 
+    /**
+     * Two people may delete a comment: whoever wrote it, and whoever owns the website
+     * it sits on. The second is moderation — a comments product where the site owner
+     * cannot remove abuse from their own page is not finished.
+     * <p>
+     * Editing stays author-only on purpose. Removing someone's words is moderation;
+     * rewriting them and leaving their name on top is something else.
+     */
     @Transactional
     public void deleteComment(String callerUserId, String commentId) {
-        getOwned(callerUserId, commentId);
-        comments.deleteById(toUuid(commentId));   // replies and likes cascade in the database
+        Comment comment = comments.findById(toUuid(commentId))
+                .orElseThrow(() -> new NotFoundException("Comment not found"));
+
+        boolean wroteIt = comment.getAuthor() != null
+                && comment.getAuthor().getId().toString().equals(callerUserId);
+        // One extra query: the website is a proxy, so reaching its owner loads it.
+        boolean ownsTheSite = comment.getWebsite().getOwner().getId().toString()
+                .equals(callerUserId);
+
+        if (!wroteIt && !ownsTheSite) {
+            // 404 rather than 403, matching deviation #4: refuse to confirm that
+            // someone else's comment exists.
+            throw new NotFoundException("Comment not found");
+        }
+
+        comments.deleteById(comment.getId());   // replies and likes cascade in the database
     }
 
     @Transactional

@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
-import { detectTheme } from './theme.js';
 import './styles.css';
 
 const container = document.getElementById('gimme-comments-root');
@@ -20,7 +19,7 @@ if (!container) {
 
   createRoot(container).render(
     <StrictMode>
-      <App websiteId={websiteId} theme={detectTheme(container)} />
+      <App websiteId={websiteId} container={container} />
     </StrictMode>
   );
 }
