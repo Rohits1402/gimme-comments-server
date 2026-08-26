@@ -4,6 +4,30 @@ import { api } from '../api.js';
 import { useStore } from '../store.jsx';
 import { Button, Card, EmptyState, Field, IconExternal, IconPlus, TimeAgo } from '../ui.jsx';
 
+/**
+ * People type "www.example.com", not "https://www.example.com". Refusing that is
+ * pedantry — the scheme is obvious. Normalising also stops the same site being
+ * registered twice under two spellings, which the unique constraint on the URL
+ * would otherwise happily allow.
+ *
+ * Returns null when the input is not an address at all.
+ */
+function normaliseUrl(raw) {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const url = new URL(withScheme);
+    // "localhost" aside, an address without a dot is a typo, not a host.
+    if (!url.hostname.includes('.') && url.hostname !== 'localhost') return null;
+    const path = url.pathname.replace(/\/+$/, '');
+    return url.origin + path;
+  } catch {
+    return null;
+  }
+}
+
 function CreateForm({ onCreated, onCancel }) {
   const { notify } = useStore();
   const [name, setName] = useState('');
@@ -14,12 +38,18 @@ function CreateForm({ onCreated, onCancel }) {
 
   const submit = async (e) => {
     e.preventDefault();
+    const normalised = normaliseUrl(url);
+    if (!normalised) {
+      setError('That does not look like a web address.');
+      return;
+    }
+
     setBusy(true);
     setError(null);
     try {
       const data = await api.post('/websites', {
         website_name: name,
-        website_url: url,
+        website_url: normalised,
         website_description: description,
       });
       notify('success', 'Website added.');
@@ -45,12 +75,22 @@ function CreateForm({ onCreated, onCancel }) {
         <Field
           id="w-url"
           label="Address"
-          type="url"
+          type="text"
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck="false"
           required
-          placeholder="https://example.com"
-          hint="Each address can only be registered once."
+          placeholder="www.example.com"
+          hint="https:// is added for you. Each address can only be registered once."
           value={url}
           onChange={(e) => setUrl(e.target.value)}
+          onBlur={() => {
+            // Show what will actually be saved rather than saving something
+            // different from what is on screen.
+            const normalised = normaliseUrl(url);
+            if (normalised) setUrl(normalised);
+          }}
         />
         <Field
           id="w-desc"
