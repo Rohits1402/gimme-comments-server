@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { useStore } from '../store.jsx';
 import { Button, Field } from '../ui.jsx';
+import { Logo, LogoMark } from '../Logo.jsx';
 
 function useSubmit() {
   const [busy, setBusy] = useState(false);
@@ -22,23 +23,77 @@ function useSubmit() {
   return { busy, error, setError, run };
 }
 
+const POINTS = [
+  'Threaded replies, likes and moderation',
+  "Matches your site's light or dark design",
+  'No trackers, no third-party cookies',
+];
+
 function Shell({ title, subtitle, onSubmit, error, children, footer }) {
   return (
     <div className="gc-auth-page">
-      <form
-        className="gc-auth-card"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
-      >
-        <div className="gc-auth-brand">GimmeComments</div>
-        <h1 className="gc-auth-title">{title}</h1>
-        {subtitle ? <p className="gc-auth-sub">{subtitle}</p> : null}
-        {children}
-        {error ? <p className="gc-form-error">{error}</p> : null}
-        {footer}
-      </form>
+      <header className="gc-auth-nav">
+        <Link to="/" className="gc-auth-home">
+          <Logo size={22} />
+        </Link>
+        <Link to="/" className="gc-link">
+          Back to home
+        </Link>
+      </header>
+
+      <div className="gc-auth-body">
+        <aside className="gc-auth-aside">
+          <h2>
+            Comments on your site
+            <br />
+            in two lines of HTML.
+          </h2>
+          <ul>
+            {POINTS.map((p) => (
+              <li key={p}>
+                <span className="gc-tick" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+                {p}
+              </li>
+            ))}
+          </ul>
+        </aside>
+
+        <form
+          className="gc-auth-card"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit();
+          }}
+        >
+          <h1 className="gc-auth-title">{title}</h1>
+          {subtitle ? <p className="gc-auth-sub">{subtitle}</p> : null}
+          {children}
+          {error ? <p className="gc-form-error">{error}</p> : null}
+          {footer}
+        </form>
+      </div>
+
+      <footer className="gc-auth-foot">
+        <span className="gc-wordmark">
+          <LogoMark size={15} />
+          <span>GimmeComments</span>
+        </span>
+        <div>
+          <a href="/swagger-ui.html">API docs</a>
+          <a
+            href="https://github.com/Rohits1402/gimme-comments-server"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </a>
+          <span>MIT</span>
+        </div>
+      </footer>
     </div>
   );
 }

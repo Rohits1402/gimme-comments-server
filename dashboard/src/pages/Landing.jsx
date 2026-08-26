@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
+import { useStore } from '../store.jsx';
+import { Avatar } from '../ui.jsx';
 import { Logo, LogoMark } from '../Logo.jsx';
 
 const DEMO_ID = import.meta.env.VITE_DEMO_WEBSITE_ID;
@@ -124,6 +126,8 @@ function LiveDemo() {
 }
 
 export default function Landing() {
+  const { user } = useStore();
+
   return (
     <div className="gc-landing">
       <header className="gc-landing-nav">
@@ -138,12 +142,21 @@ export default function Landing() {
           >
             GitHub
           </a>
-          <Link to="/sign-in" className="gc-nav-signin">
-            Sign in
-          </Link>
-          <Link to="/sign-in" className="gc-cta">
-            Get started
-          </Link>
+          {user ? (
+            <Link to="/websites" className="gc-cta gc-cta-user">
+              <Avatar user={user} size={20} />
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/sign-in" className="gc-nav-signin">
+                Sign in
+              </Link>
+              <Link to="/sign-in" className="gc-cta">
+                Get started
+              </Link>
+            </>
+          )}
         </nav>
       </header>
 
@@ -160,8 +173,8 @@ export default function Landing() {
             no scripts to write, nothing tracking your readers.
           </p>
           <div className="gc-hero-cta">
-            <Link to="/sign-in" className="gc-cta gc-cta-lg">
-              Get started free
+            <Link to={user ? '/websites' : '/sign-in'} className="gc-cta gc-cta-lg">
+              {user ? 'Go to your dashboard' : 'Get started free'}
             </Link>
             <a href="#how" className="gc-cta-alt">
               See it live

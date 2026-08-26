@@ -26,6 +26,9 @@ function Shell({ children }) {
           <Logo size={24} />
         </NavLink>
         <nav className="gc-nav">
+          <NavLink to="/" end className="gc-nav-link">
+            Home
+          </NavLink>
           <NavLink to="/websites" className="gc-nav-link">
             Websites
           </NavLink>
@@ -89,7 +92,9 @@ export default function App() {
   return (
     <StoreProvider>
       <Routes>
-        <Route path="/" element={<PublicOnly><Landing /></PublicOnly>} />
+        {/* Reachable signed in or out. Somebody who clicks the logo wants the
+            home page, not to be bounced to a list of their websites. */}
+        <Route path="/" element={<Landing />} />
         <Route path="/sign-in" element={<PublicOnly><Auth /></PublicOnly>} />
         <Route path="/websites" element={<Protected><Websites /></Protected>} />
         <Route path="/websites/:id" element={<Protected><WebsiteDetail /></Protected>} />
