@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class DashboardController {
 
-    @GetMapping({"/", "/websites", "/websites/{id}", "/account"})
+    @GetMapping({"/", "/sign-in", "/websites", "/websites/{id}", "/account"})
     public String dashboard() {
         return "forward:/app/index.html";
     }
