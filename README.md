@@ -15,7 +15,9 @@
 
 ## What this is
 
-This is a Spring Boot rewrite of a Node/Express service originally built in 2023. The old server is still the contract: same URLs, same JSON envelopes, same snake_case keys, so the existing React widget and admin panel work against this backend unchanged.
+This is a Spring Boot rewrite of a Node/Express service originally built in 2023. The old server is still the contract: same URLs, same JSON envelopes, same snake_case keys.
+
+The embeddable widget in `client/` was rewritten too. The 2023 bundle read MongoDB-era field names — `_id`, `createdAt`, and the commenter's email address — none of which this API sends, so "unchanged" was never quite true. What is preserved is the wire contract, not the front-end code.
 
 It is not a line-by-line translation. The port deliberately fixes a number of real defects in the original, including a response that embedded every commenter's bcrypt hash and live OTP in public comment listings. Every intentional difference is written down in **[PARITY-NOTES.md](PARITY-NOTES.md)** with the reasoning.
 
@@ -31,7 +33,8 @@ It is not a line-by-line translation. The port deliberately fixes a number of re
 | Email | Logged to console in dev, Brevo over HTTPS in prod |
 | API documentation | springdoc-openapi 3.0.3 → Swagger UI |
 | Tests | JUnit 6, Mockito, MockMvc slice tests |
-| Build | Maven (wrapper included) |
+| Widget | React 19 + Vite, built to a single IIFE bundle, no runtime dependencies |
+| Build | Maven (wrapper included); npm for the widget |
 
 ## Quick start
 
@@ -130,11 +133,13 @@ model/        JPA entities and enums
 dto/          request and response records — entities are never returned directly
 exception/    exception hierarchy and the global handler
 
+client/                            the embeddable widget (React + Vite)
+
 src/main/resources/db/migration/   Flyway migrations — append-only, never edited once applied
 ```
 
 ## Licence
 
-[MIT](LICENSE) — the Java source, configuration, tests, and documentation in this repository.
+[MIT](LICENSE) — everything in this repository: the Java source, the widget in `client/`, configuration, tests, and documentation.
 
-The compiled widget bundle under `src/main/resources/static/build/` is the front-end from the original 2023 project, which was built by a team. It is included here so the server can serve it, and its authorship is not solely mine.
+The widget was rewritten from scratch in August 2026. Until then this repository shipped the compiled front-end from the original 2023 project, which was built by a team and was not solely my work; that bundle has been removed. `client/` replaces it and is mine.
