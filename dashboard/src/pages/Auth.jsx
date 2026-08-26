@@ -36,9 +36,6 @@ function Shell({ title, subtitle, onSubmit, error, children, footer }) {
         <Link to="/" className="gc-auth-home">
           <Logo size={22} />
         </Link>
-        <Link to="/" className="gc-link">
-          Back to home
-        </Link>
       </header>
 
       <div className="gc-auth-body">
