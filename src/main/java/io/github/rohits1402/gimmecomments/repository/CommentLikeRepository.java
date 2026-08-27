@@ -27,4 +27,7 @@ public interface CommentLikeRepository extends JpaRepository<CommentLike, UUID> 
     @Query("SELECT l.comment.id FROM CommentLike l WHERE l.user.id = :userId AND l.comment.id IN :commentIds")
     List<UUID> findLikedCommentIds(@Param("userId") UUID userId,
                                    @Param("commentIds") Collection<UUID> commentIds);
+
+    @Query("SELECT COUNT(l) FROM CommentLike l WHERE l.comment.website.owner.id = :ownerId")
+    long countForOwner(@Param("ownerId") UUID ownerId);
 }

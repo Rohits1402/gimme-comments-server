@@ -62,7 +62,7 @@ public class WebsiteController {
     @GetMapping
     public WebsiteListEnvelope getAll(@AuthenticationPrincipal String userId) {
         List<WebsiteResponse> list = websiteService.getAllByUser(userId).stream()
-                .map(WebsiteResponse::from)
+                .map(w -> WebsiteResponse.from(w.website(), w.commentCount()))
                 .toList();
         return new WebsiteListEnvelope(list);
     }
