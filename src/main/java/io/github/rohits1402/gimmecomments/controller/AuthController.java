@@ -47,7 +47,7 @@ public class AuthController {
         userService.verifyAccount(request.email(), request.otp());
         return new MsgEnvelope("Email verified successfully");
     }
-
+    
     @PostMapping("/forget-password/generate-otp")
     public MsgEnvelope generateResetOtp(@Valid @RequestBody GenerateOtpRequest request) {
         userService.sendPasswordResetOtp(request.email());

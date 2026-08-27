@@ -1,5 +1,6 @@
 package io.github.rohits1402.gimmecomments.controller;
 
+import io.github.rohits1402.gimmecomments.config.RateLimiter;
 import io.github.rohits1402.gimmecomments.config.SecurityConfig;
 import io.github.rohits1402.gimmecomments.model.Comment;
 import io.github.rohits1402.gimmecomments.model.User;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CommentController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, RateLimiter.class})
 class CommentControllerTest {
 
     private static final String WEBSITE_ID = "11111111-1111-1111-1111-111111111111";
