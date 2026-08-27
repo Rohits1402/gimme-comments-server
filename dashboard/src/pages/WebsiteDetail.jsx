@@ -164,7 +164,11 @@ function Comments({ websiteId }) {
                   <span className="gc-name">{c.by_user?.name || 'Deleted user'}</span>
                   <TimeAgo iso={c.created_at} />
                   {c.comment_parent ? <span className="gc-tag">reply</span> : null}
-                  {c.liked_by ? <span className="gc-tag">{c.liked_by} likes</span> : null}
+                  {c.liked_by ? (
+                    <span className="gc-tag">
+                      {c.liked_by} like{c.liked_by === 1 ? '' : 's'}
+                    </span>
+                  ) : null}
                 </div>
                 <p className="gc-mod-body">{c.comment_description}</p>
               </div>
@@ -204,7 +208,7 @@ export default function WebsiteDetail() {
     try {
       await api.delete(`/websites/${id}`);
       notify('success', 'Website removed.');
-      navigate('/websites');
+      navigate('/overview');
     } catch (err) {
       notify('error', err.message);
       setDeleting(false);
@@ -214,7 +218,7 @@ export default function WebsiteDetail() {
   if (error) {
     return (
       <>
-        <Link to="/websites" className="gc-back"><IconBack /> All websites</Link>
+        <Link to="/overview" className="gc-back"><IconBack /> Overview</Link>
         <div className="gc-alert">{error}</div>
       </>
     );
@@ -228,7 +232,7 @@ export default function WebsiteDetail() {
 
   return (
     <>
-      <Link to="/websites" className="gc-back"><IconBack /> All websites</Link>
+      <Link to="/overview" className="gc-back"><IconBack /> Overview</Link>
 
       <div className="gc-page-head">
         <div>

@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // The dashboard shell. Every route serves the same HTML; the data
                         // behind it is fetched with a token like any other client.
-                        .requestMatchers("/", "/sign-in", "/websites", "/websites/*", "/account").permitAll()
+                        .requestMatchers("/", "/sign-in", "/overview", "/websites", "/websites/*", "/account").permitAll()
                         .requestMatchers("/app/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/initialize-gimme-comments.js", "/build/**", "/api/v1/initialization").permitAll()

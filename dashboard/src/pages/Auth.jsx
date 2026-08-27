@@ -115,7 +115,7 @@ export default function Auth() {
       try {
         const data = await api.post('/auth/login', { email, password });
         await signIn(data.token);
-        navigate('/websites');
+        navigate('/overview');
       } catch (err) {
         // The server tells these apart deliberately, so send them somewhere useful.
         if (/not verified/i.test(err.message)) {

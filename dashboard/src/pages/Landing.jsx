@@ -143,7 +143,7 @@ export default function Landing() {
             GitHub
           </a>
           {user ? (
-            <Link to="/websites" className="gc-cta gc-cta-user">
+            <Link to="/overview" className="gc-cta gc-cta-user">
               <Avatar user={user} size={20} />
               Dashboard
             </Link>
@@ -173,7 +173,7 @@ export default function Landing() {
             no scripts to write, nothing tracking your readers.
           </p>
           <div className="gc-hero-cta">
-            <Link to={user ? '/websites' : '/sign-in'} className="gc-cta gc-cta-lg">
+            <Link to={user ? '/overview' : '/sign-in'} className="gc-cta gc-cta-lg">
               {user ? 'Go to your dashboard' : 'Get started free'}
             </Link>
             <a href="#how" className="gc-cta-alt">

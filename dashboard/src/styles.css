@@ -894,3 +894,66 @@ a:hover { text-decoration: underline; }
   margin-right: 9px;
   vertical-align: -1px;
 }
+
+
+/* ---------- overview ---------- */
+
+.gc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.gc-stat {
+  background: var(--surface);
+  border-radius: var(--r-sm);
+  padding: 14px 16px;
+}
+.gc-stat-label { font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+.gc-stat-value { font-size: 24px; font-weight: 500; line-height: 1.2; }
+.gc-stat-note { font-size: 12px; color: var(--faint); margin-top: 2px; }
+
+.gc-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 64px;
+}
+
+.gc-bar {
+  flex: 1;
+  background: var(--accent);
+  border-radius: 3px;
+  min-height: 4px;
+  transition: filter 0.15s;
+}
+.gc-bar:hover { filter: brightness(1.2); }
+.gc-bar-empty { background: var(--accent-soft); }
+
+.gc-bars-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--faint);
+  margin-top: 8px;
+}
+
+.gc-hint { font-size: 12.5px; color: var(--faint); }
+
+.gc-badge-quiet { background: var(--surface); color: var(--faint); font-weight: 400; }
+
+.gc-tag-link { color: var(--accent); }
+.gc-tag-link:hover { text-decoration: none; border-color: var(--accent); }
+
+@media (max-width: 640px) {
+  /* The delete control sits beside the comment on a wide screen. Narrow, there is
+     not room for both, and squeezing them together crushes the text to one word per
+     line — so the action drops to its own row, indented past the avatar. */
+  .gc-mod-item { flex-wrap: wrap; }
+  .gc-mod-main { flex: 1 1 calc(100% - 44px); }
+  .gc-mod-item > .gc-confirm,
+  .gc-mod-item > .gc-btn { margin-left: 44px; }
+  .gc-confirm { width: 100%; }
+  .gc-confirm-q { flex: 1 1 100%; }
+}
