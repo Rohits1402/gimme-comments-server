@@ -72,4 +72,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.internalServerError()
                 .body(new ErrorResponse("Something went wrong"));
     }
+
+    /**
+     * A 429 without Retry-After leaves the client guessing, and a guessing client
+     * retries too soon and gets refused again. Declared separately because it is the
+     * only status in this API that carries a header as well as a body.
+     */
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyRequests(TooManyRequestsException ex) {
+        return ResponseEntity.status(ex.getStatus())
+                .header("Retry-After", String.valueOf(ex.getRetryAfter().toSeconds()))
+                .body(new ErrorResponse(ex.getMessage()));
+    }
 }

@@ -1,5 +1,6 @@
 package io.github.rohits1402.gimmecomments.controller;
 
+import io.github.rohits1402.gimmecomments.config.RateLimiter;
 import io.github.rohits1402.gimmecomments.config.SecurityConfig;
 import io.github.rohits1402.gimmecomments.exception.ConflictException;
 import io.github.rohits1402.gimmecomments.model.User;
@@ -22,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, RateLimiter.class})
 public class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;

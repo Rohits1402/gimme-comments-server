@@ -1,5 +1,6 @@
 package io.github.rohits1402.gimmecomments.service;
 
+import io.github.rohits1402.gimmecomments.config.RateLimiter;
 import io.github.rohits1402.gimmecomments.exception.*;
 import io.github.rohits1402.gimmecomments.model.Gender;
 import io.github.rohits1402.gimmecomments.model.OtpPurpose;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.util.*;
 
 @Service
@@ -20,17 +22,19 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
     private final FileStorageService fileStorageService;
+    private final RateLimiter rateLimiter;
 
     public UserService(UserRepository users,
                        JwtService jwtService,
                        PasswordEncoder passwordEncoder,
                        OtpService otpService,
-                       FileStorageService fileStorageService) {
+                       FileStorageService fileStorageService, RateLimiter rateLimiter) {
         this.users = users;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.otpService = otpService;
         this.fileStorageService = fileStorageService;
+        this.rateLimiter = rateLimiter;
     }
 
     // ---- the one place where a String id becomes a UUID ----------------
@@ -90,12 +94,31 @@ public class UserService {
 
     // ---- OTP flows -----------------------------------------------------
 
+    private static final long CODES_PER_EMAIL = 3;
+    private static final Duration CODE_WINDOW = Duration.ofMinutes(10);
+
     public void sendVerificationOtp(String email) {
+        requireCodeAllowance(email);
         users.findByEmail(email).ifPresent(user -> {
             if (!user.isEmailVerified()) {
                 otpService.generate(email, OtpPurpose.ACCOUNT_VERIFICATION);
             }
         });
+    }
+
+    public void sendPasswordResetOtp(String email) {
+        requireCodeAllowance(email);
+        users.findByEmail(email)
+                .ifPresent(user -> otpService.generate(email, OtpPurpose.PASSWORD_RESET));
+    }
+
+    private void requireCodeAllowance(String email) {
+        String key = "otp:" + email.trim().toLowerCase(Locale.ROOT);
+        if (!rateLimiter.allow(key, CODES_PER_EMAIL, CODE_WINDOW)) {
+            throw new TooManyRequestsException(
+                    "Too many codes requested for that address. Wait a few minutes and try again.",
+                    CODE_WINDOW);
+        }
     }
 
     @Transactional
@@ -106,10 +129,6 @@ public class UserService {
         user.setEmailVerified(true);
     }
 
-    public void sendPasswordResetOtp(String email) {
-        users.findByEmail(email)
-                .ifPresent(user -> otpService.generate(email, OtpPurpose.PASSWORD_RESET));
-    }
 
     public void verifyResetOtp(String email, String otp) {
         otpService.verify(email, otp, OtpPurpose.PASSWORD_RESET);
