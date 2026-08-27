@@ -2,9 +2,9 @@
 
 **Comments as a service.** A website adds one script tag and gets a working comment box — threads, likes, moderation-ready — without building or hosting any of it.
 
-**[Live demo](https://rohits1402.github.io/gimme-comments-server/)** · **[API documentation](https://gimme-comments-server-p7av.onrender.com/swagger-ui.html)**
+**[Open the app](https://gimme-comments-server-p7av.onrender.com)** · **[See it on a real page](https://rohits1402.github.io/gimme-comments-server/)** · **[API documentation](https://gimme-comments-server-p7av.onrender.com/swagger-ui.html)**
 
-*The demo page is a static file on GitHub Pages with no backend of its own. Everything on it is loaded cross-origin from the API. The API runs on a free instance that sleeps after inactivity, so the first request may take up to a minute.*
+*The second link is a static page on GitHub Pages with no backend of its own — it embeds the widget exactly as a customer's site would, cross-origin. The app runs on a free instance that sleeps after inactivity, so the first request may take up to a minute.*
 
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-brightgreen)
