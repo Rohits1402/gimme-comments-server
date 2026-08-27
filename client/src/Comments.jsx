@@ -68,6 +68,19 @@ function formatBody(text) {
   });
 }
 
+
+/** Replies are removed with their parent by the database, so say so before it happens
+ *  rather than after. Counts the whole subtree, not just the direct children. */
+function countReplies(node) {
+  return node.replies.reduce((n, child) => n + 1 + countReplies(child), 0);
+}
+
+function deleteQuestion(comment) {
+  const buried = countReplies(comment);
+  if (buried === 0) return 'Delete this comment?';
+  return `Delete this and ${buried} ${buried === 1 ? 'reply' : 'replies'}?`;
+}
+
 function Composer({ parentId, initialValue = '', submitLabel, onDone, onCancel }) {
   const { websiteId, loadComments, notify } = useStore();
   const [text, setText] = useState(initialValue);
@@ -126,6 +139,7 @@ function CommentNode({ comment, depth, onRequireAuth }) {
   const { websiteId, user, comments, setComments, loadComments, notify } = useStore();
   const [replying, setReplying] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const isMine = Boolean(user?.id && comment.by_user?.id === user.id);
 
@@ -209,7 +223,7 @@ function CommentNode({ comment, depth, onRequireAuth }) {
             </button>
           ) : null}
 
-          {isMine ? (
+          {isMine && !confirming ? (
             <>
               <button
                 type="button"
@@ -219,11 +233,31 @@ function CommentNode({ comment, depth, onRequireAuth }) {
                 <IconEdit />
                 Edit
               </button>
-              <button type="button" className="gc-action gc-action-danger" onClick={remove}>
+              <button
+                type="button"
+                className="gc-action gc-action-danger"
+                onClick={() => setConfirming(true)}
+              >
                 <IconTrash />
                 Delete
               </button>
             </>
+          ) : null}
+
+          {isMine && confirming ? (
+            <span className="gc-confirm">
+              <span className="gc-confirm-q">{deleteQuestion(comment)}</span>
+              <button
+                type="button"
+                className="gc-action"
+                onClick={() => setConfirming(false)}
+              >
+                Keep it
+              </button>
+              <button type="button" className="gc-action gc-action-danger" onClick={remove}>
+                Delete
+              </button>
+            </span>
           ) : null}
         </div>
 
