@@ -2,6 +2,7 @@ package io.github.rohits1402.gimmecomments.controller;
 
 import io.github.rohits1402.gimmecomments.dto.CreateWebsiteRequest;
 import io.github.rohits1402.gimmecomments.dto.UpdateWebsiteRequest;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.rohits1402.gimmecomments.dto.WebsiteResponse;
 import io.github.rohits1402.gimmecomments.model.Website;
 import io.github.rohits1402.gimmecomments.service.WebsiteService;
@@ -17,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "Websites", description = "Register and manage the sites that embed the comment widget")
 @SecurityRequirement(name = "bearerAuth")
@@ -41,6 +43,16 @@ public class WebsiteController {
     record MsgEnvelope(String msg) {
     }
 
+    /**
+     * The widget's first call, made by an anonymous visitor on a third-party page.
+     * `msg` is unchanged so the old contract still holds; the configuration is added
+     * so the widget can be told how to look without a second round trip.
+     */
+    record WebsiteExistsEnvelope(
+            String msg,
+            @JsonProperty("website_configuration") Map<String, Object> websiteConfiguration) {
+    }
+
     @Operation(summary = "List the caller's websites",
             description = "Returns only websites owned by the authenticated user. Never anyone else's.")
     @ApiResponses({
@@ -50,7 +62,7 @@ public class WebsiteController {
     @GetMapping
     public WebsiteListEnvelope getAll(@AuthenticationPrincipal String userId) {
         List<WebsiteResponse> list = websiteService.getAllByUser(userId).stream()
-                .map(WebsiteResponse::from)
+                .map(w -> WebsiteResponse.from(w.website(), w.commentCount()))
                 .toList();
         return new WebsiteListEnvelope(list);
     }
@@ -91,9 +103,11 @@ public class WebsiteController {
             @ApiResponse(responseCode = "404", description = "Website with given id not found", content = @Content)
     })
     @GetMapping("/exists/{id}")
-    public MsgEnvelope exists(@PathVariable String id) {
-        websiteService.getById(id);           // throws NotFoundException if absent — that is the whole check
-        return new MsgEnvelope("Website found with id : " + id);
+    public WebsiteExistsEnvelope exists(@PathVariable String id) {
+        Website website = websiteService.getById(id);   // throws NotFoundException if absent
+        return new WebsiteExistsEnvelope(
+                "Website found with id : " + id,
+                website.getWebsiteConfiguration());
     }
 
     @Operation(summary = "Update the Website information",

@@ -1,5 +1,6 @@
 package io.github.rohits1402.gimmecomments.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.rohits1402.gimmecomments.model.Website;
 import tools.jackson.databind.PropertyNamingStrategies;
@@ -16,9 +17,15 @@ public record WebsiteResponse(
         @JsonProperty("website_description") String websiteDescription,
         @JsonProperty("website_url") String websiteUrl,
         @JsonProperty("website_configuration") Map<String, Object> websiteConfiguration,
-        @JsonProperty("created_at") Instant createdAt
+        @JsonProperty("created_at") Instant createdAt,
+        @JsonProperty("comment_count") @JsonInclude(JsonInclude.Include.NON_NULL) Long commentCount
 ) {
+    /** Single website — no count, because nothing has been counted. */
     public static WebsiteResponse from(Website w) {
+        return from(w, null);
+    }
+
+    public static WebsiteResponse from(Website w, Long commentCount) {
         return new WebsiteResponse(
                 w.getId().toString(),
                 w.getOwner().getId().toString(),
@@ -26,7 +33,8 @@ public record WebsiteResponse(
                 w.getDescription(),
                 w.getUrl(),
                 w.getWebsiteConfiguration(),
-                w.getCreatedAt()
+                w.getCreatedAt(),
+                commentCount
         );
     }
 }

@@ -3,6 +3,8 @@ package io.github.rohits1402.gimmecomments.service;
 import io.github.rohits1402.gimmecomments.exception.ConflictException;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
 import io.github.rohits1402.gimmecomments.model.Website;
+import io.github.rohits1402.gimmecomments.repository.CommentCount;
+import io.github.rohits1402.gimmecomments.repository.CommentRepository;
 import io.github.rohits1402.gimmecomments.repository.UserRepository;
 import io.github.rohits1402.gimmecomments.repository.WebsiteRepository;
 import org.springframework.stereotype.Service;
@@ -11,16 +13,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class WebsiteService {
 
     private final WebsiteRepository websites;
     private final UserRepository users;
+    private final CommentRepository comments;
 
-    public WebsiteService(WebsiteRepository websites, UserRepository users) {
+    public WebsiteService(WebsiteRepository websites, UserRepository users,
+                          CommentRepository comments) {
         this.websites = websites;
         this.users = users;
+        this.comments = comments;
     }
 
     private static UUID toUuid(String id) {
@@ -69,9 +75,30 @@ public class WebsiteService {
         return websites.save(website);
     }
 
-    public List<Website> getAllByUser(String userId) {
+    /**
+     * The caller's websites, each carrying how many comments it has. Two queries in
+     * total: the websites, then one grouped count. Asking per website would be the
+     * same N+1 the comment list already avoids, just one level up.
+     */
+    public List<WebsiteWithCount> getAllByUser(String userId) {
         UUID ownerId = toUuidOrNull(userId);
-        return ownerId == null ? List.of() : websites.findByOwnerId(ownerId);
+        if (ownerId == null) {
+            return List.of();
+        }
+
+        List<Website> found = websites.findByOwnerId(ownerId);
+        if (found.isEmpty()) {
+            return List.of();
+        }
+
+        Map<UUID, Long> counts = comments
+                .countByWebsiteIds(found.stream().map(Website::getId).toList())
+                .stream()
+                .collect(Collectors.toMap(CommentCount::websiteId, CommentCount::total));
+
+        return found.stream()
+                .map(w -> new WebsiteWithCount(w, counts.getOrDefault(w.getId(), 0L)))
+                .toList();
     }
 
     public Website getById(String id) {

@@ -6,6 +6,7 @@ import io.github.rohits1402.gimmecomments.model.User;
 import io.github.rohits1402.gimmecomments.model.Website;
 import io.github.rohits1402.gimmecomments.service.JwtService;
 import io.github.rohits1402.gimmecomments.service.WebsiteService;
+import io.github.rohits1402.gimmecomments.service.WebsiteWithCount;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -62,12 +63,14 @@ class WebsiteControllerTest {
         site.setName("My Blog");
         site.setUrl("https://blog.example.com");
 
-        when(websiteService.getAllByUser("user123")).thenReturn(List.of(site));
+        when(websiteService.getAllByUser("user123"))
+                .thenReturn(List.of(new WebsiteWithCount(site, 3)));
 
         mockMvc.perform(get("/api/v1/websites").with(authentication(callerIs("user123"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.websites").isArray())
                 .andExpect(jsonPath("$.websites[0].by_user").value("22222222-2222-2222-2222-222222222222"))
+                .andExpect(jsonPath("$.websites[0].comment_count").value(3))
                 .andExpect(jsonPath("$.websites[0].website_name").value("My Blog"));
     }
 
@@ -124,7 +127,8 @@ class WebsiteControllerTest {
         site.setUrl("https://a-url.example.com");
         site.setWebsiteConfiguration(Map.of("theme", "dark"));
 
-        when(websiteService.getAllByUser(anyString())).thenReturn(List.of(site));
+        when(websiteService.getAllByUser(anyString()))
+                .thenReturn(List.of(new WebsiteWithCount(site, 0)));
 
         mockMvc.perform(get("/api/v1/websites")
                         .with(authentication(callerIs("22222222-2222-2222-2222-222222222222"))))

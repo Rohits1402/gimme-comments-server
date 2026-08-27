@@ -11,6 +11,8 @@ public interface WebsiteRepository extends JpaRepository<Website, UUID> {
 
     List<Website> findByOwnerId(UUID ownerId);
 
+    long countByOwnerId(UUID ownerId);
+
     @Query("SELECT w FROM Website w JOIN FETCH w.owner")
     List<Website> findAllWithOwners();
     boolean existsByUrl(String url);
