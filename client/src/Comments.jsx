@@ -18,7 +18,10 @@ function buildTree(comments) {
   }
 
   const byOldest = (a, b) => new Date(a.created_at) - new Date(b.created_at);
-  roots.sort(byOldest);
+  // Threads newest first, matching the direction the server pages in: "load more"
+  // has to add to the bottom, never insert above what the reader is looking at.
+  // Replies stay oldest first, because a conversation reads downward.
+  roots.sort((a, b) => byOldest(b, a));
   for (const node of byId.values()) node.replies.sort(byOldest);
   return roots;
 }
@@ -82,7 +85,7 @@ function deleteQuestion(comment) {
 }
 
 function Composer({ parentId, initialValue = '', submitLabel, onDone, onCancel }) {
-  const { websiteId, loadComments, notify } = useStore();
+  const { notify } = useStore();
   const [text, setText] = useState(initialValue);
   const [busy, setBusy] = useState(false);
 
@@ -95,7 +98,6 @@ function Composer({ parentId, initialValue = '', submitLabel, onDone, onCancel }
     try {
       await onDone(body);
       setText('');
-      await loadComments();
     } catch (err) {
       notify('error', err.message);
     } finally {
@@ -136,7 +138,8 @@ function Composer({ parentId, initialValue = '', submitLabel, onDone, onCancel }
 }
 
 function CommentNode({ comment, depth, onRequireAuth }) {
-  const { websiteId, user, comments, setComments, loadComments, notify } = useStore();
+  const { websiteId, user, setComments, replaceComment, removeComment, addComment, notify } =
+    useStore();
   const [replying, setReplying] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -162,15 +165,22 @@ function CommentNode({ comment, depth, onRequireAuth }) {
       else await api.post(`/comments/like/${comment.id}`);
     } catch (err) {
       notify('error', err.message);
-      // Our prediction was wrong, so ask the server what is actually true.
-      loadComments();
+      // Our prediction was wrong, so undo it. Reloading would be simpler and
+      // would also send the reader back to page one.
+      setComments((current) =>
+        current.map((c) =>
+          c.id === comment.id
+            ? { ...c, i_liked: liked, liked_by: (c.liked_by ?? 0) + (liked ? 1 : -1) }
+            : c
+        )
+      );
     }
   };
 
   const remove = async () => {
     try {
       await api.delete(`/comments/comment/${comment.id}`);
-      await loadComments();
+      removeComment(comment.id);
     } catch (err) {
       notify('error', err.message);
     }
@@ -192,9 +202,10 @@ function CommentNode({ comment, depth, onRequireAuth }) {
             submitLabel="Save"
             onCancel={() => setEditing(false)}
             onDone={async (body) => {
-              await api.patch(`/comments/comment/${comment.id}`, {
+              const data = await api.patch(`/comments/comment/${comment.id}`, {
                 comment_description: body,
               });
+              replaceComment(data.comment);
               setEditing(false);
             }}
           />
@@ -267,10 +278,11 @@ function CommentNode({ comment, depth, onRequireAuth }) {
             submitLabel="Reply"
             onCancel={() => setReplying(false)}
             onDone={async (body) => {
-              await api.post(`/comments/comment/${websiteId}`, {
+              const data = await api.post(`/comments/comment/${websiteId}`, {
                 comment_description: body,
                 comment_parent: comment.id,
               });
+              addComment(data.comment);
               setReplying(false);
             }}
           />
@@ -294,9 +306,9 @@ function CommentNode({ comment, depth, onRequireAuth }) {
 }
 
 export default function Comments({ onRequireAuth }) {
-  const { websiteId, comments, user } = useStore();
+  const { websiteId, comments, user, total, hasMore, loadMore, loadingMore, addComment } =
+    useStore();
   const roots = buildTree(comments);
-  const total = comments.length;
 
   return (
     <div className="gc-comments">
@@ -307,9 +319,12 @@ export default function Comments({ onRequireAuth }) {
       {user ? (
         <Composer
           submitLabel="Comment"
-          onDone={(body) =>
-            api.post(`/comments/comment/${websiteId}`, { comment_description: body })
-          }
+          onDone={async (body) => {
+            const data = await api.post(`/comments/comment/${websiteId}`, {
+              comment_description: body,
+            });
+            addComment(data.comment);
+          }}
         />
       ) : (
         <button type="button" className="gc-signin-prompt" onClick={onRequireAuth}>
@@ -328,6 +343,14 @@ export default function Comments({ onRequireAuth }) {
             />
           ))}
         </ul>
+      ) : null}
+
+      {hasMore ? (
+        <div className="gc-load-more">
+          <Button onClick={loadMore} busy={loadingMore}>
+            Load more comments
+          </Button>
+        </div>
       ) : null}
     </div>
   );

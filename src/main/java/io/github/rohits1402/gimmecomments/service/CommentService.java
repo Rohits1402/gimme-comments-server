@@ -4,17 +4,20 @@ import io.github.rohits1402.gimmecomments.exception.BadRequestException;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
 import io.github.rohits1402.gimmecomments.model.Comment;
 import io.github.rohits1402.gimmecomments.repository.*;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class CommentService {
+    /**
+     * One page of threads, plus the marker for the page after it.
+     */
+    public record CommentPage(List<CommentWithLikes> comments, String nextCursor, long total) {
+    }
 
     private final CommentRepository comments;
     private final UserRepository users;
@@ -88,10 +91,12 @@ public class CommentService {
 
         if (parentCommentId != null) {
             UUID parentId = toUuidOrNull(parentCommentId);
-            if (parentId == null || !comments.existsById(parentId)) {
+            Comment parent = parentId == null ? null : comments.findById(parentId).orElse(null);
+            if (parent == null) {
                 throw new BadRequestException("No parent comment found with id : " + parentCommentId);
             }
-            comment.setParent(comments.getReferenceById(parentId));
+            // The thread is worked out by Comment#joinThread when the row is saved.
+            comment.setParent(parent);
         }
 
         return comments.save(comment);
@@ -104,19 +109,54 @@ public class CommentService {
                 .orElseThrow(() -> new NotFoundException("Comment not found"));
     }
 
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
+
     @Transactional(readOnly = true)
-    public List<CommentWithLikes> getAllForWebsite(String websiteId, String callerUserId) {
+    public CommentPage getPageForWebsite(String websiteId, String callerUserId,
+                                         String cursor, Integer requestedSize) {
         UUID id = toUuidOrNull(websiteId);
         if (id == null) {
-            return List.of();
+            return new CommentPage(List.of(), null, 0);
         }
 
-        List<Comment> found = comments.findByWebsiteIdWithAuthors(id);
-        if (found.isEmpty()) {
-            return List.of();
+        // A caller does not get to decide how much work we do.
+        int size = requestedSize == null ? DEFAULT_PAGE_SIZE
+                : Math.clamp(requestedSize, 1, MAX_PAGE_SIZE);
+
+        // Ask for one more than we will send. If it comes back, there is another
+        // page — answered without a second COUNT query.
+        List<Comment> roots = cursor == null || cursor.isBlank()
+                ? comments.findRoots(id, Limit.of(size + 1))
+                : decodeAndFind(id, cursor, size + 1);
+
+        String nextCursor = null;
+        if (roots.size() > size) {
+            roots = roots.subList(0, size);
+            Comment last = roots.getLast();
+            nextCursor = new CommentCursor(last.getCreatedAt(), last.getId()).encode();
         }
 
-        List<UUID> commentIds = found.stream().map(Comment::getId).toList();
+        long total = comments.countByWebsiteId(id);
+        if (roots.isEmpty()) {
+            return new CommentPage(List.of(), null, total);
+        }
+
+        // The threads themselves, then everything hanging off them. Two queries,
+        // whatever the depth.
+        List<Comment> page = new ArrayList<>(roots);
+        page.addAll(comments.findRepliesForRoots(roots.stream().map(Comment::getId).toList()));
+
+        return new CommentPage(withLikes(page, callerUserId), nextCursor, total);
+    }
+
+    private List<Comment> decodeAndFind(UUID websiteId, String cursor, int limit) {
+        CommentCursor from = CommentCursor.decode(cursor);
+        return comments.findRootsBefore(websiteId, from.createdAt(), from.id(), Limit.of(limit));
+    }
+
+    private List<CommentWithLikes> withLikes(List<Comment> page, String callerUserId) {
+        List<UUID> commentIds = page.stream().map(Comment::getId).toList();
 
         Map<UUID, Long> counts = likes.countByCommentIds(commentIds).stream()
                 .collect(Collectors.toMap(LikeCount::commentId, LikeCount::total));
@@ -126,10 +166,8 @@ public class CommentService {
                 ? Set.of()
                 : Set.copyOf(likes.findLikedCommentIds(callerId, commentIds));
 
-        return found.stream()
-                .map(c -> new CommentWithLikes(c,
-                        counts.getOrDefault(c.getId(), 0L),
-                        mine.contains(c.getId())))
+        return page.stream()
+                .map(c -> new CommentWithLikes(c, counts.getOrDefault(c.getId(), 0L), mine.contains(c.getId())))
                 .toList();
     }
 

@@ -30,8 +30,11 @@ export function Button({ variant = 'ghost', size, busy, children, ...rest }) {
     <button
       type="button"
       className={`gc-btn gc-btn-${variant}${size ? ` gc-btn-${size}` : ''}`}
-      disabled={busy || rest.disabled}
       {...rest}
+      // After the spread, not before: rest carries the caller's own `disabled`,
+      // and a later JSX prop wins. Written above the spread, a busy button stays
+      // clickable, and a second click submits the form again.
+      disabled={busy || rest.disabled}
     >
       {busy ? <span className="gc-spinner" /> : children}
     </button>

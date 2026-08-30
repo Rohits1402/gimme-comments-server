@@ -335,6 +335,8 @@
 
 .gc-root .gc-thread-root{ margin-top: 22px; }
 
+.gc-root .gc-load-more{ display: flex; justify-content: center; margin-top: 22px; }
+
 .gc-root .gc-thread{ display: flex; flex-direction: column; gap: 20px; }
 
 .gc-root .gc-comment{ display: flex; gap: 11px; }

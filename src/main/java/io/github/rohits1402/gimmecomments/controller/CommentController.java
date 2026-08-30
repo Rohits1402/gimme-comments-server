@@ -1,5 +1,7 @@
 package io.github.rohits1402.gimmecomments.controller;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.rohits1402.gimmecomments.dto.CommentResponse;
 import io.github.rohits1402.gimmecomments.dto.CreateCommentRequest;
 import io.github.rohits1402.gimmecomments.dto.LikeResponse;
@@ -23,7 +25,10 @@ public class CommentController {
     private final CommentService commentService;
     private final LikeService likeService;
 
-    record CommentListEnvelope(List<CommentResponse> comments) {
+    record CommentListEnvelope(List<CommentResponse> comments,
+                               @JsonProperty("next_cursor")
+                               @JsonInclude(JsonInclude.Include.NON_NULL) String nextCursor,
+                               @JsonProperty("total_comments") long totalComments) {
     }
 
     record CommentMsgEnvelope(String msg, CommentResponse comment) {
@@ -51,11 +56,17 @@ public class CommentController {
 
     @GetMapping("/comment/{websiteId}")
     public CommentListEnvelope getAll(@PathVariable String websiteId,
-                                      @AuthenticationPrincipal String callerUserId) {
-        List<CommentResponse> list = commentService.getAllForWebsite(websiteId, callerUserId).stream()
+                                      @AuthenticationPrincipal String callerUserId,
+                                      @RequestParam(required = false) String cursor,
+                                      @RequestParam(required = false) Integer size) {
+        CommentService.CommentPage page =
+                commentService.getPageForWebsite(websiteId, callerUserId, cursor, size);
+
+        List<CommentResponse> list = page.comments().stream()
                 .map(c -> CommentResponse.from(c.comment(), c.comment().getAuthor(), c.likedBy(), c.iLiked()))
                 .toList();
-        return new CommentListEnvelope(list);
+
+        return new CommentListEnvelope(list, page.nextCursor(), page.total());
     }
 
     @PostMapping("/comment/{websiteId}")
