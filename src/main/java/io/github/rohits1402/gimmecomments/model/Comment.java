@@ -34,6 +34,11 @@ public class Comment {
     @JoinColumn(name = "parent_comment_id")
     private Comment parent;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "root_comment_id", nullable = false)
+    private Comment rootComment;
+
+
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     private List<Comment> replies = new ArrayList<>();
 
@@ -47,4 +52,20 @@ public class Comment {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    /**
+     * Every comment belongs to a thread and stores which one; a top-level comment
+     * is its own. This lives on the entity rather than in CommentService so that
+     * no write path can forget it — a Comment saved straight through the
+     * repository, from a test or a future importer, still joins a thread.
+     * <p>
+     * Assigning {@code this} is safe before the row exists: the id is generated in
+     * Java, and Hibernate reads the id off the reference when it builds the INSERT.
+     */
+    @PrePersist
+    void joinThread() {
+        if (rootComment == null) {
+            rootComment = parent == null ? this : parent.getRootComment();
+        }
+    }
 }

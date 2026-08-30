@@ -356,6 +356,8 @@ a:hover { text-decoration: underline; }
 }
 .gc-mod-item:first-child { border-top: none; padding-top: 0; }
 
+.gc-load-more { display: flex; justify-content: center; margin-top: 18px; }
+
 .gc-mod-main { flex: 1; min-width: 0; }
 .gc-mod-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .gc-name { font-weight: 570; font-size: 14px; }

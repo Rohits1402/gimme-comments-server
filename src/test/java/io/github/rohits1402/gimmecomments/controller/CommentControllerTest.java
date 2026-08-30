@@ -80,25 +80,31 @@ class CommentControllerTest {
 
     @Test
     void listComments_carriesTheLikeCountAndWhetherTheCallerLiked() throws Exception {
-        when(commentService.getAllForWebsite(WEBSITE_ID, USER_ID))
-                .thenReturn(List.of(new CommentWithLikes(sampleComment(), 3L, true)));
+        when(commentService.getPageForWebsite(WEBSITE_ID, USER_ID, null, null))
+                .thenReturn(new CommentService.CommentPage(
+                        List.of(new CommentWithLikes(sampleComment(), 3L, true)), "next-page", 41));
 
         mockMvc.perform(get("/api/v1/comments/comment/" + WEBSITE_ID)
                         .with(authentication(callerIs(USER_ID))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.comments[0].liked_by").value(3))
-                .andExpect(jsonPath("$.comments[0].i_liked").value(true));
+                .andExpect(jsonPath("$.comments[0].i_liked").value(true))
+                .andExpect(jsonPath("$.next_cursor").value("next-page"))
+                .andExpect(jsonPath("$.total_comments").value(41));
     }
 
     @Test
     void listComments_areReadableWithoutAToken_andTheCallerIsAnonymous() throws Exception {
-        when(commentService.getAllForWebsite(WEBSITE_ID, "anonymousUser"))
-                .thenReturn(List.of(new CommentWithLikes(sampleComment(), 5L, false)));
+        when(commentService.getPageForWebsite(WEBSITE_ID, "anonymousUser", null, null))
+                .thenReturn(new CommentService.CommentPage(
+                        List.of(new CommentWithLikes(sampleComment(), 5L, false)), null, 1));
 
         mockMvc.perform(get("/api/v1/comments/comment/" + WEBSITE_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.comments[0].liked_by").value(5))
-                .andExpect(jsonPath("$.comments[0].i_liked").value(false));
+                .andExpect(jsonPath("$.comments[0].i_liked").value(false))
+                // Absent, not null: the last page carries no cursor at all.
+                .andExpect(jsonPath("$.next_cursor").doesNotExist());
     }
 
     @Test

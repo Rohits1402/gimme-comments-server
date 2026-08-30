@@ -108,15 +108,67 @@ function Settings({ website, onSaved }) {
   );
 }
 
+const byOldest = (a, b) => new Date(a.created_at) - new Date(b.created_at);
+
+/**
+ * The API sends one page of threads: the root comments first, newest first, then
+ * every reply belonging to them. Shown in that raw order a moderator would see
+ * twenty openers followed by a pile of orphaned replies, so each reply is moved
+ * to sit directly under the comment it answers.
+ * <p>
+ * The thread order itself is left exactly as the server sent it. Re-sorting the
+ * whole list by date would let a newly loaded page insert rows above what the
+ * moderator is already reading.
+ */
+function inThreadOrder(list) {
+  const byId = new Map(list.map((c) => [c.id, c]));
+  const childrenOf = new Map();
+  const roots = [];
+
+  for (const c of list) {
+    const parent = c.comment_parent ? byId.get(c.comment_parent) : null;
+    if (!parent) {
+      roots.push(c);
+      continue;
+    }
+    if (!childrenOf.has(parent.id)) childrenOf.set(parent.id, []);
+    childrenOf.get(parent.id).push(c);
+  }
+
+  const out = [];
+  const walk = (node) => {
+    // buried is filled in after the walk: it is however many rows the recursion
+    // added below this one, which is exactly what deleting this comment removes.
+    const row = { comment: node, buried: 0 };
+    out.push(row);
+    const before = out.length;
+    for (const child of (childrenOf.get(node.id) ?? []).sort(byOldest)) walk(child);
+    row.buried = out.length - before;
+  };
+  roots.forEach(walk);
+  return out;
+}
+
+/** Say what the delete takes with it, rather than only what was clicked. */
+function deleteQuestion(buried) {
+  if (buried === 0) return 'Delete this comment?';
+  return `Delete this and ${buried} ${buried === 1 ? 'reply' : 'replies'}?`;
+}
+
 function Comments({ websiteId }) {
   const { notify } = useStore();
   const [comments, setComments] = useState(null);
+  const [total, setTotal] = useState(0);
+  const [cursor, setCursor] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [removing, setRemoving] = useState(null);
 
   const load = useCallback(async () => {
     try {
       const data = await api.get(`/comments/comment/${websiteId}`);
       setComments(data.comments ?? []);
+      setTotal(data.total_comments ?? 0);
+      setCursor(data.next_cursor ?? null);
     } catch (err) {
       notify('error', err.message);
       setComments([]);
@@ -127,12 +179,48 @@ function Comments({ websiteId }) {
     load();
   }, [load]);
 
+  const loadMore = async () => {
+    // The guard matters: two clicks with the same cursor append the same page twice.
+    if (!cursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const data = await api.get(
+        `/comments/comment/${websiteId}?cursor=${encodeURIComponent(cursor)}`
+      );
+      setComments((current) => [...current, ...(data.comments ?? [])]);
+      setTotal(data.total_comments ?? 0);
+      setCursor(data.next_cursor ?? null);
+    } catch (err) {
+      notify('error', err.message);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   const remove = async (id) => {
     setRemoving(id);
     try {
       await api.delete(`/comments/comment/${id}`);
-      notify('success', 'Comment removed.');
-      await load();
+
+      // Removed from the list rather than reloaded. load() now means "go back to
+      // page one", so a moderator deleting one comment on page four would lose
+      // every page they had opened. Replies go with their parent because the
+      // database deletes them by cascade.
+      const doomed = new Set([id]);
+      let grew = true;
+      while (grew) {
+        grew = false;
+        for (const c of comments) {
+          if (!doomed.has(c.id) && c.comment_parent && doomed.has(c.comment_parent)) {
+            doomed.add(c.id);
+            grew = true;
+          }
+        }
+      }
+      setComments((current) => current.filter((c) => !doomed.has(c.id)));
+      setTotal((n) => Math.max(0, n - doomed.size));
+
+      notify('success', doomed.size === 1 ? 'Comment removed.' : `Comment and ${doomed.size - 1} ${doomed.size === 2 ? 'reply' : 'replies'} removed.`);
     } catch (err) {
       notify('error', err.message);
     } finally {
@@ -148,15 +236,17 @@ function Comments({ websiteId }) {
     );
   }
 
+  const rows = inThreadOrder(comments);
+
   return (
-    <Card title={`Comments (${comments.length})`}>
+    <Card title={`Comments (${total})`}>
       {comments.length === 0 ? (
         <EmptyState title="Nothing yet">
           Comments left on this website will appear here, and you can remove any of them.
         </EmptyState>
       ) : (
         <ul className="gc-mod-list">
-          {comments.map((c) => (
+          {rows.map(({ comment: c, buried }) => (
             <li key={c.id} className="gc-mod-item">
               <Avatar user={c.by_user} size={32} />
               <div className="gc-mod-main">
@@ -173,7 +263,7 @@ function Comments({ websiteId }) {
                 <p className="gc-mod-body">{c.comment_description}</p>
               </div>
               <ConfirmButton
-                question="Delete this comment?"
+                question={deleteQuestion(buried)}
                 busy={removing === c.id}
                 onConfirm={() => remove(c.id)}
               >
@@ -184,6 +274,14 @@ function Comments({ websiteId }) {
           ))}
         </ul>
       )}
+
+      {cursor ? (
+        <div className="gc-load-more">
+          <Button onClick={loadMore} busy={loadingMore}>
+            Load more comments
+          </Button>
+        </div>
+      ) : null}
     </Card>
   );
 }
