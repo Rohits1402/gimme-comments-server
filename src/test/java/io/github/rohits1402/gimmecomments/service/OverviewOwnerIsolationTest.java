@@ -1,5 +1,6 @@
 package io.github.rohits1402.gimmecomments.service;
 
+import io.github.rohits1402.gimmecomments.TestDatabase;
 import io.github.rohits1402.gimmecomments.dto.OverviewResponse;
 import io.github.rohits1402.gimmecomments.model.Comment;
 import io.github.rohits1402.gimmecomments.model.User;
@@ -10,6 +11,7 @@ import io.github.rohits1402.gimmecomments.repository.WebsiteRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * exactly as it found it.
  */
 @SpringBootTest
-@ActiveProfiles("dev")
+@ActiveProfiles("test")
+@Import(TestDatabase.class)
 @Transactional
 class OverviewOwnerIsolationTest {
 

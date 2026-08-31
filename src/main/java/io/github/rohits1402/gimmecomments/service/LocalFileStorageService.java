@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
-@Profile("dev")
+@Profile("!prod")
 public class LocalFileStorageService implements FileStorageService {
 
     private static final Logger log = LoggerFactory.getLogger(LocalFileStorageService.class);

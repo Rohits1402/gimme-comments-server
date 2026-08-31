@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
-@Profile("dev")
+@Profile("!prod")
 public class LoggingEmailService implements EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(LoggingEmailService.class);

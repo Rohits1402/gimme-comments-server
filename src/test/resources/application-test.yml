@@ -1,0 +1,26 @@
+# Tests get their own environment rather than borrowing application-dev.yml, so a
+# change to your local settings cannot quietly change what the suite exercises.
+#
+# There is no datasource here: TestDatabase supplies one from a container, and the
+# ConnectionDetails bean that @ServiceConnection creates takes precedence over
+# spring.datasource.* anyway. A URL in this file would only be a thing to trip over.
+spring:
+  jpa:
+    hibernate:
+      # Kept, because it is what production does: Flyway builds the schema and
+      # Hibernate refuses to start if the entities disagree with it. That check
+      # now runs against a database built from V1 upwards on every test run.
+      ddl-auto: validate
+app:
+  jwt:
+    # Only needs to be at least 32 characters - JwtService hashes the raw bytes.
+    secret: test-profile-signing-key-not-used-anywhere-else
+  upload:
+    dir: ./target/test-uploads
+    base-url: http://localhost/uploads
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
+    org.testcontainers: WARN
+    com.github.dockerjava: WARN

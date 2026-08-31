@@ -9,7 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.nio.file.Paths;
 
 @Configuration
-@Profile("dev")
+@Profile("!prod")
 public class WebConfig implements WebMvcConfigurer {
 
     private final String uploadDir;
