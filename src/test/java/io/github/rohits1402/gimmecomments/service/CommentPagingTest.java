@@ -1,5 +1,6 @@
 package io.github.rohits1402.gimmecomments.service;
 
+import io.github.rohits1402.gimmecomments.TestDatabase;
 import io.github.rohits1402.gimmecomments.exception.BadRequestException;
 import io.github.rohits1402.gimmecomments.model.Comment;
 import io.github.rohits1402.gimmecomments.model.User;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +34,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * exactly as it was found.
  */
 @SpringBootTest
-@ActiveProfiles("dev")
+@ActiveProfiles("test")
+@Import(TestDatabase.class)
 @Transactional
 class CommentPagingTest {
 
