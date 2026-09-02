@@ -1,12 +1,14 @@
 package io.github.rohits1402.gimmecomments.service;
 
 import io.github.rohits1402.gimmecomments.exception.ConflictException;
+import io.github.rohits1402.gimmecomments.exception.ConstraintViolations;
 import io.github.rohits1402.gimmecomments.exception.NotFoundException;
 import io.github.rohits1402.gimmecomments.model.Website;
 import io.github.rohits1402.gimmecomments.repository.CommentCount;
 import io.github.rohits1402.gimmecomments.repository.CommentRepository;
 import io.github.rohits1402.gimmecomments.repository.UserRepository;
 import io.github.rohits1402.gimmecomments.repository.WebsiteRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,7 +74,14 @@ public class WebsiteService {
         if (websiteDescription != null) website.setDescription(websiteDescription);
         if (websiteConfiguration != null) website.setWebsiteConfiguration(websiteConfiguration);
 
-        return websites.save(website);
+        try {
+            return websites.saveAndFlush(website);
+        } catch (DataIntegrityViolationException e) {
+            if (!ConstraintViolations.isViolationOf(e, ConstraintViolations.WEBSITE_URL)) {
+                throw e;
+            }
+            throw new ConflictException("Email already registered");
+        }
     }
 
     /**

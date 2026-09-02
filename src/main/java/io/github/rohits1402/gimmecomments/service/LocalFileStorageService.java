@@ -65,7 +65,7 @@ public class LocalFileStorageService implements FileStorageService {
         if (fileUrl == null || fileUrl.isBlank() || !fileUrl.startsWith(baseUrl))
             return;
 
-        String filename = fileUrl.substring(fileUrl.lastIndexOf('/' + 1));
+        String filename = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
         try {
             Files.deleteIfExists(uploadDir.resolve(filename));
         } catch (IOException e) {
