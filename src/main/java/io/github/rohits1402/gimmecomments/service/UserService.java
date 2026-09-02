@@ -6,6 +6,8 @@ import io.github.rohits1402.gimmecomments.model.Gender;
 import io.github.rohits1402.gimmecomments.model.OtpPurpose;
 import io.github.rohits1402.gimmecomments.model.User;
 import io.github.rohits1402.gimmecomments.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,18 +25,20 @@ public class UserService {
     private final OtpService otpService;
     private final FileStorageService fileStorageService;
     private final RateLimiter rateLimiter;
+    private final ApplicationEventPublisher events;
 
     public UserService(UserRepository users,
                        JwtService jwtService,
                        PasswordEncoder passwordEncoder,
                        OtpService otpService,
-                       FileStorageService fileStorageService, RateLimiter rateLimiter) {
+                       FileStorageService fileStorageService, RateLimiter rateLimiter, ApplicationEventPublisher events) {
         this.users = users;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.otpService = otpService;
         this.fileStorageService = fileStorageService;
         this.rateLimiter = rateLimiter;
+        this.events = events;
     }
 
     // ---- the one place where a String id becomes a UUID ----------------
@@ -58,7 +62,14 @@ public class UserService {
         user.setName(name);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
-        return users.save(user);
+        try {
+            return users.saveAndFlush(user);
+        } catch (DataIntegrityViolationException e) {
+            if (!ConstraintViolations.isViolationOf(e, ConstraintViolations.USER_EMAIL)) {
+                throw e;
+            }
+            throw new ConflictException("Email already registered");
+        }
     }
 
     public String login(String email, String password) {
@@ -148,8 +159,17 @@ public class UserService {
     public User updateProfileImage(String userId, MultipartFile file) {
         User user = getById(userId);
         String oldUrl = user.getProfileImage();
+
+        // The upload stays inside the transaction, because the row needs the URL it
+        // returns. If the commit then fails, the new file is orphaned: wasted bytes,
+        // and nothing pointing at them.
         user.setProfileImage(fileStorageService.store(file));
-        fileStorageService.delete(oldUrl);
+
+        // Delete must not stay. Here it destroyed the old file before the row that
+        // replaced it existed, so a rollback left a reference to nothing.
+        if (oldUrl != null && !oldUrl.isBlank()) {
+            events.publishEvent(new ObsoleteImage(oldUrl));
+        }
         return user;
     }
 
