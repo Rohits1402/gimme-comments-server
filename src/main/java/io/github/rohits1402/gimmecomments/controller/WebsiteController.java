@@ -121,7 +121,7 @@ public class WebsiteController {
                                      @AuthenticationPrincipal String userId,
                                      @RequestBody UpdateWebsiteRequest request) {
         Website updated = websiteService.update(id, userId, request.websiteName(),
-                request.websiteDescription(), request.websiteConfiguration());
+                request.websiteDescription(), request.websiteUrl(), request.websiteConfiguration());
         return new WebsiteMsgEnvelope("Website updated successfully", WebsiteResponse.from(updated));
     }
 

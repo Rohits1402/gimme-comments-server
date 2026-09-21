@@ -120,10 +120,18 @@ public class UserService {
     @Transactional
     public void deleteUser(String userId) {
         UUID id = toUuid(userId);
-        if (!users.existsById(id)) {
-            throw new NotFoundException("User not found");
+        User user = users.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
+
+        String image = user.getProfileImage();
+        users.delete(user);            // websites, comments and likes cascade in the database
+
+        // Storage has no foreign keys, so the avatar would otherwise sit there for ever.
+        // Published rather than deleted here, for the same reason a replaced image is:
+        // the row has to be gone before the file is, or a rollback leaves a user
+        // pointing at something that no longer exists.
+        if (image != null && !image.isBlank()) {
+            events.publishEvent(new ObsoleteImage(image));
         }
-        users.deleteById(id);          // websites, comments and likes cascade in the database
     }
 
     public User getById(String id) {

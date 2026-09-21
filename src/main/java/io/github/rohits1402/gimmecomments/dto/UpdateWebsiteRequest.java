@@ -10,6 +10,7 @@ import java.util.Map;
 public record UpdateWebsiteRequest(
         @JsonProperty("website_name") String websiteName,
         @JsonProperty("website_description") String websiteDescription,
+        @JsonProperty("website_url") String websiteUrl,
         @JsonProperty("website_configuration") Map<String, Object> websiteConfiguration
 ) {
 }

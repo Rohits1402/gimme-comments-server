@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useStore } from '../store.jsx';
+import { normaliseUrl } from '../url.js';
 import {
   Avatar,
   Button,
@@ -34,19 +35,31 @@ function Settings({ website, onSaved }) {
 
   const [name, setName] = useState(website.website_name ?? '');
   const [description, setDescription] = useState(website.website_description ?? '');
+  const [url, setUrl] = useState(website.website_url ?? '');
   const [theme, setTheme] = useState(config.theme ?? 'auto');
   const [accent, setAccent] = useState(config.accent ?? DEFAULT_ACCENT);
   const [busy, setBusy] = useState(false);
 
   const save = async (e) => {
     e.preventDefault();
+
+    // Typed by hand, so the same tidying the create form does: add the scheme, drop a
+    // trailing slash. Without it the same site can be stored twice under two spellings.
+    const address = normaliseUrl(url);
+    if (!address) {
+      notify('error', 'That does not look like a website address.');
+      return;
+    }
+
     setBusy(true);
     try {
       const data = await api.patch(`/websites/${website.id}`, {
         website_name: name,
         website_description: description,
+        website_url: address,
         website_configuration: { ...config, theme, accent },
       });
+      setUrl(address);
       onSaved(data.website);
       notify('success', 'Saved.');
     } catch (err) {
@@ -60,6 +73,14 @@ function Settings({ website, onSaved }) {
     <Card title="Settings">
       <form onSubmit={save}>
         <Field id="s-name" label="Name" required value={name} onChange={(e) => setName(e.target.value)} />
+        <Field
+          id="s-url"
+          label="Address"
+          required
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          hint="Moved domain? Change it here. Every comment stays - they belong to the site, not the address."
+        />
         <Field
           id="s-desc"
           label="Description"

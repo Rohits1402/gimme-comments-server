@@ -117,12 +117,27 @@ public class WebsiteService {
 
     @Transactional
     public Website update(String id, String callerId, String websiteName, String websiteDescription,
-                          Map<String, Object> websiteConfiguration) {
+                          String websiteUrl, Map<String, Object> websiteConfiguration) {
 
         Website website = getOwned(id, callerId);
         if (websiteName != null) website.setName(websiteName);
         if (websiteDescription != null) website.setDescription(websiteDescription);
         if (websiteConfiguration != null) website.setWebsiteConfiguration(websiteConfiguration);
+
+        if (websiteUrl != null && !websiteUrl.equals(website.getUrl())) {
+            website.setUrl(websiteUrl);
+            try {
+                // Flushed here so the unique constraint answers inside this method,
+                // where it can be turned into the same message the create path gives.
+                // Left to commit time it would surface as "Resource already exists".
+                websites.saveAndFlush(website);
+            } catch (DataIntegrityViolationException e) {
+                if (!ConstraintViolations.isViolationOf(e, ConstraintViolations.WEBSITE_URL)) {
+                    throw e;
+                }
+                throw new ConflictException("Website already exist!");
+            }
+        }
         return website;
     }
 
