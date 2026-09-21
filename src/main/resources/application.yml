@@ -9,7 +9,9 @@ spring:
     open-in-view: false
 app:
   jwt:
-    expiration-ms: 2592000000
+    expiration-ms: 900000        # 15 minutes
+  refresh:
+    expiration-ms: 2592000000    # 30 days
 management:
   endpoint:
     health:

@@ -1,7 +1,9 @@
 package io.github.rohits1402.gimmecomments.controller;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.rohits1402.gimmecomments.dto.*;
 import io.github.rohits1402.gimmecomments.model.User;
+import io.github.rohits1402.gimmecomments.service.AuthTokens;
 import io.github.rohits1402.gimmecomments.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -27,13 +29,26 @@ public class AuthController {
         return UserResponse.from(saved);
     }
 
-    record TokenEnvelope(String token) {
+    record TokenEnvelope(String token,
+                         @JsonProperty("refresh_token") String refreshToken) {
     }
 
     @PostMapping("/login")
     public TokenEnvelope login(@Valid @RequestBody LoginRequest request) {
-        String token = userService.login(request.email(), request.password());
-        return new TokenEnvelope(token);
+        AuthTokens tokens = userService.login(request.email(), request.password());
+        return new TokenEnvelope(tokens.accessToken(), tokens.refreshToken());
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@Valid @RequestBody RefreshRequest request) {
+        userService.logout(request.refreshToken());
+    }
+
+    @PostMapping("/refresh")
+    public TokenEnvelope refresh(@Valid @RequestBody RefreshRequest request) {
+        AuthTokens tokens = userService.refresh(request.refreshToken());
+        return new TokenEnvelope(tokens.accessToken(), tokens.refreshToken());
     }
 
     @PostMapping("/account-verification/generate-otp")
@@ -47,7 +62,7 @@ public class AuthController {
         userService.verifyAccount(request.email(), request.otp());
         return new MsgEnvelope("Email verified successfully");
     }
-    
+
     @PostMapping("/forget-password/generate-otp")
     public MsgEnvelope generateResetOtp(@Valid @RequestBody GenerateOtpRequest request) {
         userService.sendPasswordResetOtp(request.email());

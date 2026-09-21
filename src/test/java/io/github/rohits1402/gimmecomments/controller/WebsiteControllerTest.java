@@ -48,9 +48,9 @@ class WebsiteControllerTest {
     }
 
     @Test
-    void listWebsites_returns403_whenNoTokenPresent() throws Exception {
+    void listWebsites_returns401_whenNoTokenPresent() throws Exception {
         mockMvc.perform(get("/api/v1/websites"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
