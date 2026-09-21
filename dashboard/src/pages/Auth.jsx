@@ -114,7 +114,7 @@ export default function Auth() {
     run(async () => {
       try {
         const data = await api.post('/auth/login', { email, password });
-        await signIn(data.token);
+        await signIn(data);
         navigate('/overview');
       } catch (err) {
         // The server tells these apart deliberately, so send them somewhere useful.

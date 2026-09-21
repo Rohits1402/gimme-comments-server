@@ -3,6 +3,8 @@ package io.github.rohits1402.gimmecomments.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -34,7 +36,8 @@ public class SecurityConfig {
                         .requestMatchers("/app/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/initialize-gimme-comments.js", "/build/**", "/api/v1/initialization").permitAll()
-                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login",
+                                "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
                         .requestMatchers("/api/v1/auth/account-verification/**", "/api/v1/auth/forget-password/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
@@ -43,7 +46,28 @@ public class SecurityConfig {
                         // as an anonymous visitor. Public in the original app for the same reason.
                         .requestMatchers(HttpMethod.GET, "/api/v1/websites/exists/**").permitAll()
                         .anyRequest().authenticated()
-                ).addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                )
+                /*
+                 * Without this, an unauthenticated request is refused with 403.
+                 * Spring Security falls back to Http403ForbiddenEntryPoint once form
+                 * login and basic auth are both disabled, because it has no way to ask
+                 * for credentials.
+                 * <p>
+                 * 403 is the wrong answer and it broke something real: it means "you
+                 * are known and still not allowed", so a client cannot tell an expired
+                 * access token from a permission it will never have. Both front ends
+                 * refresh on 401, so with 403 they never refreshed at all - they simply
+                 * failed. 401 is the honest status and the one the old API sent.
+                 * <p>
+                 * ForbiddenException still answers 403, which is correct: those callers
+                 * are authenticated and genuinely not allowed.
+                 */
+                .exceptionHandling(e -> e.authenticationEntryPoint((request, response, ex) -> {
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    response.getWriter().write("{\"msg\":\"Authentication required\"}");
+                }))
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

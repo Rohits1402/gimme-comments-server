@@ -26,12 +26,13 @@ public class UserService {
     private final FileStorageService fileStorageService;
     private final RateLimiter rateLimiter;
     private final ApplicationEventPublisher events;
+    private final RefreshTokenService refreshTokens;
 
     public UserService(UserRepository users,
                        JwtService jwtService,
                        PasswordEncoder passwordEncoder,
                        OtpService otpService,
-                       FileStorageService fileStorageService, RateLimiter rateLimiter, ApplicationEventPublisher events) {
+                       FileStorageService fileStorageService, RateLimiter rateLimiter, ApplicationEventPublisher events, RefreshTokenService refreshTokens) {
         this.users = users;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
@@ -39,6 +40,7 @@ public class UserService {
         this.fileStorageService = fileStorageService;
         this.rateLimiter = rateLimiter;
         this.events = events;
+        this.refreshTokens = refreshTokens;
     }
 
     // ---- the one place where a String id becomes a UUID ----------------
@@ -72,7 +74,7 @@ public class UserService {
         }
     }
 
-    public String login(String email, String password) {
+    public AuthTokens login(String email, String password) {
         User user = users.findByEmail(email)
                 .orElseThrow(() -> new UnauthenticatedException("Invalid credentials"));
 
@@ -86,7 +88,33 @@ public class UserService {
             throw new ForbiddenException("Account is deactivated (Contact administrator)");
         }
 
-        return jwtService.generateToken(user.getId().toString());
+        return new AuthTokens(
+                jwtService.generateToken(user.getId().toString()),
+                refreshTokens.issue(user.getId()));
+    }
+
+    /**
+     * Transactional on purpose: the rotation and the account check have to succeed or
+     * fail together. Without it, a deactivated account would still be handed a freshly
+     * issued token on its way to being refused.
+     */
+    @Transactional
+    public AuthTokens refresh(String rawRefreshToken) {
+        RefreshTokenService.Rotation rotation = refreshTokens.rotate(rawRefreshToken);
+
+        User user = users.findById(rotation.userId())
+                .orElseThrow(() -> new UnauthenticatedException("Invalid refresh token"));
+        if (!user.isAccountActive()) {
+            throw new ForbiddenException("Account is deactivated (Contact administrator)");
+        }
+
+        return new AuthTokens(
+                jwtService.generateToken(rotation.userId().toString()),
+                rotation.refreshToken());
+    }
+
+    public void logout(String rawRefreshToken) {
+        refreshTokens.revokeSession(rawRefreshToken);
     }
 
     @Transactional

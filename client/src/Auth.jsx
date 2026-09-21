@@ -52,7 +52,7 @@ function Login({ go, email, setEmail }) {
     run(async () => {
       try {
         const data = await api.post('/auth/login', { email, password });
-        await signIn(data.token);
+        await signIn(data);
         notify('success', 'Signed in.');
       } catch (err) {
         // The server distinguishes "not verified" from "wrong password" on

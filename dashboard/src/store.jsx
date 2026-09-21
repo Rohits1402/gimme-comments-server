@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { api, clearToken, getToken, setToken } from './api.js';
+import { api, clearTokens, getRefreshToken, getToken, setTokens } from './api.js';
 
 const StoreContext = createContext(null);
 
@@ -34,16 +34,27 @@ export function StoreProvider({ children }) {
   }, []);
 
   const signIn = useCallback(
-    async (token) => {
-      setToken(token);
+    async (tokens) => {
+      setTokens(tokens);
       setReady(false);
       await loadUser();
     },
     [loadUser]
   );
 
-  const signOut = useCallback(() => {
-    clearToken();
+  const signOut = useCallback(async () => {
+    // Telling the server is what actually ends the session - it revokes every token
+    // from this sign-in. Clearing storage alone would only stop this browser using
+    // tokens that still work everywhere else.
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      try {
+        await api.post('/auth/logout', { refresh_token: refreshToken });
+      } catch {
+        // Offline, or the session was already gone. Sign out locally either way.
+      }
+    }
+    clearTokens();
     setUser(null);
   }, []);
 
