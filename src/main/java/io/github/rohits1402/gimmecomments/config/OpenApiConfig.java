@@ -16,7 +16,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("GimmeComments API")
-                        .version("1.0.0")
+                        .version("1.1.0")
                         .description("""
                                 Comments as a service. Websites embed a small script and get a
                                 working comment box without building one.

@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GimmeComments — comments as a service</title>
   <meta name="description" content="A live demo of GimmeComments: a Spring Boot service that gives any website a working comment box from one script tag.">
+
+  <!-- Read by LinkedIn, Slack and WhatsApp, which fetch this page but never run
+       its JavaScript. og:url is absolute because a crawler has no page to
+       resolve it against. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="GimmeComments" />
+  <meta property="og:title" content="GimmeComments — a live demo" />
+  <meta property="og:description" content="A live demo of GimmeComments: a Spring Boot service that gives any website a working comment box from one script tag." />
+  <meta property="og:url" content="https://rohits1402.github.io/gimme-comments-server/" />
+  <meta name="twitter:card" content="summary" />
   <style>
     :root {
       --gc-ink: #1a1a1a;

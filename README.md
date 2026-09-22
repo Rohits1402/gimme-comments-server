@@ -28,13 +28,14 @@ It is not a line-by-line translation. The port deliberately fixes a number of re
 | Language / runtime | Java 21 |
 | Framework | Spring Boot 4.1.0, Spring MVC |
 | Persistence | PostgreSQL 17 via Spring Data JPA and Hibernate, schema owned by Flyway (Docker for dev, Neon for prod) |
-| Authentication | JWT (jjwt 0.12.6), bcrypt password hashing |
+| Authentication | Short-lived JWT access tokens (jjwt 0.12.6) plus rotating refresh tokens, bcrypt password hashing |
 | File storage | Local disk in dev, AWS S3 in prod — one interface, two implementations |
 | Email | Logged to console in dev, Brevo over HTTPS in prod |
 | API documentation | springdoc-openapi 3.0.3 → Swagger UI |
-| Tests | JUnit 6, Mockito, MockMvc slice tests |
+| Tests | JUnit 6, Mockito, MockMvc slices, and Testcontainers 2.0.5 where a real PostgreSQL is the only honest test |
 | Widget | React 19 + Vite, built to a single IIFE bundle, no runtime dependencies |
-| Build | Maven (wrapper included); npm for the widget |
+| Dashboard | React 19 + Vite, served by the application itself at `/` |
+| Build | Maven (wrapper included); npm for the widget and the dashboard |
 
 ## Quick start
 
@@ -88,11 +89,16 @@ Everything lives under `/api/v1`. Authentication is a bearer token: `Authorizati
 | Accounts | `register`, `login`, account verification by OTP, password reset by OTP |
 | Profile | read, update details, change password, upload profile image, delete account |
 | Websites | full CRUD, scoped to the owner |
-| Comments | list, create (with threaded replies), edit, delete |
+| Comments | list (cursor-paged, a whole thread at a time), create (with threaded replies), edit, delete |
 | Likes | add and remove |
+| Overview | totals, fourteen days of activity and the newest comments across every website the caller owns, in one request |
 | Widget | `GET /api/v1/initialization` plus the static bundle |
 
 Reading comments is public — that is the point of an embeddable widget. Everything else requires a token.
+
+**A session can be taken back.** A JWT is verified by checking a signature, not by looking anything up, so nothing done to the database stops one working. The access token is therefore short-lived, and a separate refresh token — stored only as a hash, single-use — is exchanged at `POST /api/v1/auth/refresh` for a new pair. Presenting a refresh token that has already been spent means a copy of it is loose, so the entire session family is revoked. Signing out ends one session rather than every device.
+
+**The public endpoints are rate limited:** ten requests a minute per IP across the account endpoints, and three codes per ten minutes per email address on OTP generation. Those endpoints need no token and one of them sends real email.
 
 The full specification is generated from the code and served at `/v3/api-docs`.
 
@@ -101,6 +107,7 @@ The full specification is generated from the code and served at `/v3/api-docs`.
 ```mermaid
 flowchart LR
     W[Third-party site<br/>+ widget script] -->|CORS, no cookies| C[Controllers]
+    B[Dashboard<br/>served at /] -->|bearer token| C
     C --> S[Services]
     S --> R[Repositories]
     R --> M[(PostgreSQL)]
@@ -120,7 +127,13 @@ Requests pass through a filter chain that stamps a request id into the logging c
 ./mvnw test
 ```
 
-Controller slices using `@WebMvcTest` with mocked services, plus one full-context test that verifies every bean can be wired. They cover, among other things, that passwords never appear in a response, that a request without a token is rejected, that a caller's identity comes from the token rather than the request body, and that another user's data returns 404 rather than 403.
+The suite is in two halves, and the split is deliberate.
+
+**Controller slices** (`@WebMvcTest`, services mocked) cover what HTTP is responsible for: that passwords never appear in a response, that a request without a token is rejected with 401, that a caller's identity comes from the token rather than the request body, and that another user's data returns 404 rather than 403.
+
+**Service tests against a real PostgreSQL**, started by Testcontainers, cover everything a mock cannot prove. A mocked repository returns whatever the test told it to, so it can demonstrate nothing about a unique constraint, a cursor comparison, a `LIMIT`, a cascade, or the order a transaction commits in. These tests cover paging, the duplicate-like race, constraint names, the rule that side effects wait for the commit, the `V6` backfill, and refresh-token rotation and reuse detection.
+
+One full-context test verifies every bean can still be wired. Docker must be running for the Testcontainers half; nothing else is needed, and no test touches the development database.
 
 ## Project layout
 
@@ -134,12 +147,15 @@ dto/          request and response records — entities are never returned direc
 exception/    exception hierarchy and the global handler
 
 client/                            the embeddable widget (React + Vite)
+dashboard/                         the signed-in dashboard (React + Vite), built into static/app
+docs/                              the GitHub Pages demo — a plain page that embeds the widget
 
 src/main/resources/db/migration/   Flyway migrations — append-only, never edited once applied
+src/test/                          controller slices, and service tests against a real PostgreSQL
 ```
 
 ## Licence
 
-[MIT](LICENSE) — everything in this repository: the Java source, the widget in `client/`, configuration, tests, and documentation.
+[MIT](LICENSE) — everything in this repository: the Java source, the widget in `client/`, the dashboard in `dashboard/`, configuration, tests, and documentation.
 
 The widget was rewritten from scratch in August 2026. Until then this repository shipped the compiled front-end from the original 2023 project, which was built by a team and was not solely my work; that bundle has been removed. `client/` replaces it and is mine.

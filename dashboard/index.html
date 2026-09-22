@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>GimmeComments</title>
+    <meta name="description" content="A Spring Boot service that gives any website a working comment box from one script tag. Threads, likes, cursor paging and moderation included." />
+
+    <!-- Read by LinkedIn, Slack and WhatsApp, which fetch this page but never run
+         its JavaScript. Without these they see an empty <div> and show no preview.
+         og:url is absolute because a crawler has no page to resolve it against. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GimmeComments" />
+    <meta property="og:title" content="GimmeComments — comments as a service" />
+    <meta property="og:description" content="A Spring Boot service that gives any website a working comment box from one script tag. Threads, likes, cursor paging and moderation included." />
+    <meta property="og:url" content="https://gimme-comments-server-p7av.onrender.com/" />
+    <meta name="twitter:card" content="summary" />
   </head>
   <body>
     <div id="root"></div>
